@@ -1,0 +1,14 @@
+{
+  "extends": "./tools/typescript-config-policy/node-ts-source.json",
+  "compilerOptions": {
+    "declaration": true,
+    "lib": ["ES2024"],
+    "noEmitOnError": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "target": "ES2024",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/vendor/**/*.test.ts"]
+}
