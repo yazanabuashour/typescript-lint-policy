@@ -32,10 +32,12 @@ export type WidenedBinding = {
 
 export function functionBoundary(node: ESTree.Node): ESTree.Node | null {
   let current = node.parent
+
   while (current !== null && current.type !== "Program") {
     if (functionBoundaryTypes.has(current.type)) return current
     current = current.parent
   }
+
   return null
 }
 
@@ -49,8 +51,10 @@ export function resolvedVariableForIdentifier(
         candidate.identifier.start === identifier.start &&
         candidate.identifier.end === identifier.end,
     )
+
     if (reference !== undefined) return reference.resolved
   }
+
   return null
 }
 
@@ -65,6 +69,7 @@ function variableDeclarator(
       return definition.node
     }
   }
+
   return null
 }
 
@@ -81,6 +86,7 @@ function knownValueEvidence(
     unwrapped.type === "TSTypeAssertion"
   ) {
     if (broadTypeKind(unwrapped.typeAnnotation) !== null) return null
+
     return { type: unwrapped.typeAnnotation }
   }
 
@@ -101,6 +107,7 @@ function knownValueEvidence(
 
   if (unwrapped.type !== "Identifier") return null
   const variable = resolvedVariableForIdentifier(scopes, unwrapped)
+
   if (variable === null || visitedVariables.has(variable)) return null
 
   const annotatedIdentifier = variable.identifiers.find(
@@ -108,7 +115,9 @@ function knownValueEvidence(
       identifier.typeAnnotation !== null &&
       identifier.typeAnnotation !== undefined,
   )
+
   const annotation = annotatedIdentifier?.typeAnnotation?.typeAnnotation
+
   if (annotation !== undefined && annotatedIdentifier !== undefined) {
     if (
       functionBoundary(annotatedIdentifier) !== boundary ||
@@ -116,10 +125,12 @@ function knownValueEvidence(
     ) {
       return null
     }
+
     return { type: annotation }
   }
 
   const declarator = variableDeclarator(variable)
+
   if (
     declarator === null ||
     declarator.parent.type !== "VariableDeclaration" ||
@@ -146,6 +157,7 @@ export function widenedBinding(
   scopes: Scopes,
 ): WidenedBinding | null {
   const declarator = variableDeclarator(variable)
+
   if (
     declarator === null ||
     declarator.parent.type !== "VariableDeclaration" ||
@@ -162,25 +174,31 @@ export function widenedBinding(
   const boundary = functionBoundary(declarator)
   const declaredType = declarator.id.typeAnnotation?.typeAnnotation
   const initializerAssertion = assertionFromExpression(declarator.init)
+
   const initializerBroadKind =
     initializerAssertion === null
       ? null
       : broadTypeKind(initializerAssertion.typeAnnotation)
+
   const declaredBroadKind =
     declaredType === undefined ? null : broadTypeKind(declaredType)
+
   const broadKind = declaredBroadKind ?? initializerBroadKind
+
   if (broadKind === null) return null
 
   const originalExpression =
     initializerAssertion !== null && initializerBroadKind !== null
       ? assertedExpression(initializerAssertion)
       : declarator.init
+
   const evidence = knownValueEvidence(
     originalExpression,
     scopes,
     boundary,
     new Set([variable]),
   )
+
   return evidence === null
     ? null
     : { broadKind, evidence, declaredAt: declarator.end, boundary }

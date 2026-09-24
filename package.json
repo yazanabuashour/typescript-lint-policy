@@ -2,18 +2,11 @@
   "name": "@yazanabuashour/oxlint-config",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "description": "Strict Oxlint policy with pinned anti-slop rules and local additions",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/yazanabuashour/typescript-lint-policy"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/config.d.ts",
-      "import": "./dist/config.js"
-    }
   },
   "files": [
     "dist",
@@ -23,13 +16,21 @@
     "UPSTREAM.md",
     "UPSTREAM-SOURCE.json",
     "LICENSE",
-    "LICENSE.anti-slop"
+    "LICENSE.anti-slop",
+    "LICENSE.eslint-stylistic"
   ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    }
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "npm run upstream:check && npm run format:check && npm run typecheck && npm run build && npm run test && npm run lint && npm pack --dry-run",
-    "format": "biome check --write .",
-    "format:check": "biome check .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
     "lint": "oxlint --deny-warnings --report-unused-disable-directives .",
     "test": "node --test test/*.test.mjs && npm run test:upstream",
     "test:upstream": "node --import ./test/rule-tester.mjs --test src/vendor/anti-slop/src/rules/*.test.ts src/vendor/anti-slop/src/effect/rules/*.test.ts",
@@ -39,17 +40,19 @@
     "vendor": "node scripts/vendor.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.2",
-    "@oxlint/plugins": "1.78.0",
+    "@oxlint/plugins": "1.85.0",
     "@types/node": "26.1.0",
-    "oxlint": "1.78.0",
+    "oxfmt": "0.70.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2002",
     "typescript": "7.0.2"
+  },
+  "peerDependencies": {
+    "@oxlint/plugins": "1.85.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2002"
   },
   "engines": {
     "node": ">=22.18.0"
-  },
-  "peerDependencies": {
-    "@oxlint/plugins": "1.78.0",
-    "oxlint": "1.78.0"
   }
 }

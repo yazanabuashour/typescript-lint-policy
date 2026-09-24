@@ -21,6 +21,7 @@ check(
     "const value = <User>(<unknown>input);",
   ],
 )
+
 check(
   "no-conditional-empty-object-spread",
   "avoid",
@@ -30,12 +31,14 @@ check(
     "const result = { ...(condition ? {} : { value }) };",
   ],
 )
+
 check(
   "no-shape-in-symbol-names",
   "forbiddenSymbolName",
   ["schema.shape.id.parse(input);"],
   ["interface UserShape { id: string }", "type User = { shape: string };"],
 )
+
 check(
   "no-module-mocking",
   "moduleMock",
@@ -45,6 +48,7 @@ check(
     "jest.unstable_mockModule('store');",
   ],
 )
+
 for (const method of ["get", "apply"]) {
   check(
     `no-reflect-${method}`,
@@ -53,6 +57,7 @@ for (const method of ["get", "apply"]) {
     [`Reflect['${method}'](owner, key);`],
   )
 }
+
 check(
   "no-object-parameters",
   "objectParameter",
@@ -77,6 +82,7 @@ check(
     "type Input = object; const Constructor = class Input {}; function consume(value: Input) {}",
   ],
 )
+
 check(
   "no-unknown-parameters",
   "unknownParameter",
@@ -101,6 +107,7 @@ check(
     "type Input = unknown; const Constructor = class Input {}; function consume(value: Input) {}",
   ],
 )
+
 check(
   "no-unknown-returns",
   "unknownReturn",
@@ -116,6 +123,7 @@ check(
     "type Input = unknown; const Constructor = class Input {}; function load(): Input { return input; }",
   ],
 )
+
 check(
   "no-unknown-type-aliases",
   "unknownAlias",
@@ -133,6 +141,7 @@ check(
     "type Identity<T> = T; type Payload = Identity<Identity<unknown>>;",
   ],
 )
+
 check(
   "no-unsafe-dictionary-type",
   "unsafeDictionary",
@@ -148,6 +157,7 @@ check(
     "interface Empty { brand?: never } type Unsafe = Record<string, Empty>;",
   ],
 )
+
 check(
   "no-known-value-widening",
   "widening",
@@ -167,6 +177,7 @@ check(
     "function guard(value: unknown): value is User { return true; } function load(): User { return user; } guard(load());",
   ],
 )
+
 check(
   "no-widen-then-assert",
   "widenThenAssert",
@@ -180,6 +191,7 @@ check(
 )
 
 const typeGuardOptions = [{ allowInTypeGuards: true }]
+
 tester.run("project/no-runtime-typeof", plugin.rules["no-runtime-typeof"], {
   valid: [
     'typeof document === "undefined";',
@@ -213,6 +225,7 @@ tester.run("project/no-runtime-typeof", plugin.rules["no-runtime-typeof"], {
     },
   ],
 })
+
 tester.run(
   "project/require-safety-comment-for-type-assertion",
   plugin.rules["require-safety-comment-for-type-assertion"],

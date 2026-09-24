@@ -16,6 +16,7 @@ import {
 
 function unwrapExpression(expression: ESTree.Expression): ESTree.Expression {
   let current = expression
+
   while (
     current.type === "ParenthesizedExpression" ||
     current.type === "TSAsExpression" ||
@@ -25,6 +26,7 @@ function unwrapExpression(expression: ESTree.Expression): ESTree.Expression {
   ) {
     current = current.expression
   }
+
   return current
 }
 
@@ -39,6 +41,7 @@ function annotationTarget(
 
 function enclosingFunction(node: ESTree.Node): FunctionExpression | null {
   let current: ESTree.Node | null = node.parent
+
   while (current !== null && current.type !== "Program") {
     if (
       current.type === "ArrowFunctionExpression" ||
@@ -47,8 +50,10 @@ function enclosingFunction(node: ESTree.Node): FunctionExpression | null {
     ) {
       return current
     }
+
     current = current.parent
   }
+
   return null
 }
 
@@ -58,7 +63,9 @@ function sourceKeyName(
 ): string {
   if (key.type === "Identifier" || key.type === "PrivateIdentifier")
     return key.name
+
   if (key.type === "Literal") return String(key.value)
+
   return sourceCode.getText(key)
 }
 
@@ -67,17 +74,22 @@ function functionName(
   owner: FunctionExpression | null,
 ): string {
   if (owner === null) return "anonymous function"
+
   if (owner.id !== null) return owner.id.name
   const parent = owner.parent
+
   if (parent.type === "VariableDeclarator" && parent.id.type === "Identifier")
     return parent.id.name
+
   if (parent.type === "MethodDefinition")
     return sourceKeyName(sourceCode, parent.key)
+
   return "anonymous function"
 }
 
 function isEmptyObjectExpression(expression: ESTree.Expression): boolean {
   const unwrapped = unwrapExpression(expression)
+
   return (
     unwrapped.type === "ObjectExpression" && unwrapped.properties.length === 0
   )
@@ -104,11 +116,13 @@ function reportFlow(
   subject: string,
 ) {
   if (destination === null) return
+
   if (
     isDictionaryAccumulatorTarget(destination) &&
     isEmptyObjectExpression(expression)
   )
     return
+
   if (!hasKnownEvidence(context.sourceCode, expression)) return
   context.report({
     node: expression,
@@ -183,8 +197,10 @@ export const noKnownValueWideningRule = defineRule({
       AssignmentExpression(node) {
         if (node.operator !== "=" || node.left.type !== "Identifier") return
         const variable = resolveVariable(context.sourceCode, node.left)
+
         if (variable === null) return
         const declarator = variableDeclarator(variable)
+
         if (declarator === null || declarator.id.type !== "Identifier") return
         reportFlow(
           context,
@@ -195,11 +211,13 @@ export const noKnownValueWideningRule = defineRule({
       },
       CallExpression(node) {
         if (environment === null) return
+
         const flow = knownPredicateArgument(
           context.sourceCode,
           node,
           environment,
         )
+
         if (flow === null) return
         context.report({
           node: flow.argument,

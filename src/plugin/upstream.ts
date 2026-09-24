@@ -7,7 +7,10 @@ import { noReflectApplyRule } from "../vendor/anti-slop/src/rules/no-reflect-app
 import { noReflectGetRule } from "../vendor/anti-slop/src/rules/no-reflect-get.ts"
 import { noForbiddenTermInSymbolNamesRule } from "../vendor/anti-slop/src/rules/no-shape-in-symbol-names.ts"
 
+import { requireReadableSpacingRule } from "../vendor/anti-slop/src/rules/require-readable-spacing.ts"
+
 export const upstreamRules = {
+  "require-readable-spacing": requireReadableSpacingRule,
   "no-array-filter-map": noArrayFilterMapRule,
   "no-chained-type-assertions": noChainedTypeAssertionsRule,
   "no-conditional-empty-object-spread": noConditionalEmptyObjectSpreadRule,

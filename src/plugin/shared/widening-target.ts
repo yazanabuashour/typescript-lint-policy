@@ -10,12 +10,14 @@ import {
   typeReferenceName,
   unwrapTransparentType,
 } from "./type-environment.ts"
+
 export type WideningTargetKind =
   | "anonymous object"
   | "generic container"
   | "object"
   | "open dictionary"
   | "unknown"
+
 export type WideningTarget = { readonly kind: WideningTargetKind }
 
 export function classifyWideningTarget(
@@ -23,8 +25,11 @@ export function classifyWideningTarget(
   environment: TypeEnvironment,
 ): WideningTarget | null {
   const unwrapped = unwrapTransparentType(type)
+
   if (unwrapped.type === "TSUnknownKeyword") return { kind: "unknown" }
+
   if (unwrapped.type === "TSObjectKeyword") return { kind: "object" }
+
   if (unwrapped.type === "TSTypeLiteral") {
     return unwrapped.members.some(
       (member) => member.type === "TSIndexSignature",
@@ -34,28 +39,38 @@ export function classifyWideningTarget(
         ? { kind: "anonymous object" }
         : null
   }
+
   if (unwrapped.type === "TSMappedType") return { kind: "open dictionary" }
+
   if (unwrapped.type !== "TSTypeReference") return null
   const name = typeReferenceName(unwrapped)
+
   if (name === null) return null
+
   if (
     TRANSPARENT_WRAPPERS.has(name) &&
     isBuiltIn(name, unwrapped, environment)
   ) {
     const wrapped = unwrapped.typeArguments?.params[0]
+
     return wrapped === undefined
       ? null
       : classifyWideningTarget(wrapped, environment)
   }
+
   if (name === "Record" && isBuiltIn(name, unwrapped, environment)) {
     return hasBroadRecordKey(unwrapped, environment, new Map())
       ? { kind: "open dictionary" }
       : null
   }
+
   const alias = visibleTypeAlias(name, unwrapped, environment.typeAliases)
+
   if (alias === null) return null
+
   if ((alias.typeParameters?.params.length ?? 0) > 0) {
     const substitutions = aliasSubstitution(alias, unwrapped, new Map())
+
     const resolved =
       substitutions === null
         ? null
@@ -65,18 +80,23 @@ export function classifyWideningTarget(
             substitutions,
             new Set([name]),
           )
+
     return resolved?.kind === "open dictionary"
       ? { kind: "generic container" }
       : null
   }
+
   const substitutions = aliasSubstitution(alias, unwrapped, new Map())
+
   if (substitutions === null) return null
+
   const resolved = classifyAliasBroadTarget(
     alias.typeAnnotation,
     environment,
     substitutions,
     new Set([name]),
   )
+
   return resolved
 }
 
@@ -86,6 +106,7 @@ function hasBroadRecordKey(
   substitutions: TypeAliasEnvironment,
 ): boolean {
   const key = type.typeArguments?.params[0]
+
   return key === undefined || isBroadMappedKey(key, environment, substitutions)
 }
 
@@ -96,6 +117,7 @@ function isBroadMappedKey(
   visitedAliases: ReadonlySet<string> = new Set(),
 ): boolean {
   const unwrapped = unwrapTransparentType(type)
+
   if (
     unwrapped.type === "TSStringKeyword" ||
     unwrapped.type === "TSNumberKeyword" ||
@@ -103,15 +125,19 @@ function isBroadMappedKey(
   ) {
     return true
   }
+
   if (unwrapped.type === "TSUnionType") {
     return unwrapped.types.some((member) =>
       isBroadMappedKey(member, environment, substitutions, visitedAliases),
     )
   }
+
   if (unwrapped.type !== "TSTypeReference") return false
   const name = typeReferenceName(unwrapped)
+
   if (name === null) return false
   const substitution = substitutions.get(name)
+
   if (
     substitution !== undefined &&
     !isUnappliedReferenceTo(substitution, name)
@@ -123,9 +149,11 @@ function isBroadMappedKey(
       visitedAliases,
     )
   }
+
   if (name === "PropertyKey" && isBuiltIn(name, unwrapped, environment))
     return true
   const alias = visibleTypeAlias(name, unwrapped, environment.typeAliases)
+
   if (
     alias === null ||
     (alias.typeParameters?.params.length ?? 0) > 0 ||
@@ -133,8 +161,10 @@ function isBroadMappedKey(
   ) {
     return false
   }
+
   const nextVisited = new Set(visitedAliases)
   nextVisited.add(name)
+
   return isBroadMappedKey(
     alias.typeAnnotation,
     environment,
@@ -150,8 +180,11 @@ function classifyAliasBroadTarget(
   resolvingAliases: ReadonlySet<string>,
 ): WideningTarget | null {
   const unwrapped = unwrapTransparentType(type)
+
   if (unwrapped.type === "TSUnknownKeyword") return { kind: "unknown" }
+
   if (unwrapped.type === "TSObjectKeyword") return { kind: "object" }
+
   if (unwrapped.type === "TSTypeLiteral") {
     return unwrapped.members.some(
       (member) => member.type === "TSIndexSignature",
@@ -159,15 +192,19 @@ function classifyAliasBroadTarget(
       ? { kind: "open dictionary" }
       : null
   }
+
   if (unwrapped.type === "TSMappedType") {
     return isBroadMappedKey(unwrapped.constraint, environment, substitutions)
       ? { kind: "open dictionary" }
       : null
   }
+
   if (unwrapped.type !== "TSTypeReference") return null
   const name = typeReferenceName(unwrapped)
+
   if (name === null) return null
   const substitution = substitutions.get(name)
+
   if (substitution !== undefined) {
     return isUnappliedReferenceTo(substitution, name)
       ? null
@@ -178,11 +215,13 @@ function classifyAliasBroadTarget(
           resolvingAliases,
         )
   }
+
   if (
     TRANSPARENT_WRAPPERS.has(name) &&
     isBuiltIn(name, unwrapped, environment)
   ) {
     const wrapped = unwrapped.typeArguments?.params[0]
+
     return wrapped === undefined
       ? null
       : classifyAliasBroadTarget(
@@ -192,17 +231,22 @@ function classifyAliasBroadTarget(
           resolvingAliases,
         )
   }
+
   if (name === "Record" && isBuiltIn(name, unwrapped, environment)) {
     return hasBroadRecordKey(unwrapped, environment, substitutions)
       ? { kind: "open dictionary" }
       : null
   }
+
   const alias = visibleTypeAlias(name, unwrapped, environment.typeAliases)
+
   if (alias === null || resolvingAliases.has(name)) return null
   const nextSubstitutions = aliasSubstitution(alias, unwrapped, substitutions)
+
   if (nextSubstitutions === null) return null
   const nextResolving = new Set(resolvingAliases)
   nextResolving.add(name)
+
   return classifyAliasBroadTarget(
     alias.typeAnnotation,
     environment,

@@ -8,6 +8,7 @@ import { fileHashes, root, sha256, sourceHashes } from "./integrity.mjs"
 const temporary = NodeFS.mkdtempSync(
   NodePath.join(NodeOS.tmpdir(), "lint-policy-build-"),
 )
+
 try {
   const inputs = sourceHashes()
   NodeChildProcess.execFileSync(
@@ -15,6 +16,21 @@ try {
     ["-p", NodePath.join(root, "tsconfig.json"), "--outDir", temporary],
     { cwd: root, stdio: "inherit" },
   )
+
+  // TypeScript does not emit input declarations or third-party license notices.
+  const assets = [
+    "vendor/anti-slop/LICENSE",
+    "vendor/anti-slop/src/vendor/eslint-stylistic/LICENSE",
+    "vendor/anti-slop/src/vendor/eslint-stylistic/UPSTREAM.md",
+    "vendor/anti-slop/src/vendor/eslint-stylistic/padding-line-options.d.ts",
+  ]
+
+  for (const asset of assets) {
+    const destination = NodePath.join(temporary, asset)
+    NodeFS.mkdirSync(NodePath.dirname(destination), { recursive: true })
+    NodeFS.copyFileSync(NodePath.join(root, "src", asset), destination)
+  }
+
   NodeAssert.deepEqual(sourceHashes(), inputs, "Source changed during build")
   const outputs = fileHashes(temporary, NodeFS.readdirSync(temporary))
   NodeFS.writeFileSync(

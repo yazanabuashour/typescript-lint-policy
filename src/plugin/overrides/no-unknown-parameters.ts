@@ -33,18 +33,23 @@ export const noUnknownParametersRule = defineRule({
   },
   createOnce(context) {
     let environment: TypeAliasEnvironment | null = null
+
     const checkParameters = (node: ParameterOwner) => {
       if (environment === null) return
       const predicate = node.returnType?.typeAnnotation
+
       for (const parameter of node.params) {
         const annotation = functionParameterTypeAnnotation(parameter)
+
         if (
           !annotation ||
           !resolvesToUnknown(annotation.typeAnnotation, environment)
         )
           continue
         const name = functionParameterBindingName(parameter, context.sourceCode)
+
         if (name === "cause") continue
+
         if (
           predicate?.type === "TSTypePredicate" &&
           predicate.parameterName.type === "Identifier" &&

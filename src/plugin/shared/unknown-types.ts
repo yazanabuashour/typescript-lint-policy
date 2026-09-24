@@ -10,8 +10,10 @@ export function resolvesToUnknown(
 ): boolean {
   return resolvedTypeMatches(type, environment, (resolved, matches) => {
     if (resolved.type === "TSUnknownKeyword") return true
+
     if (resolved.type === "TSParenthesizedType")
       return matches(resolved.typeAnnotation)
+
     return resolved.type === "TSUnionType" && resolved.types.some(matches)
   })
 }

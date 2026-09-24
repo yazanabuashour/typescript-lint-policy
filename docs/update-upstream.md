@@ -21,16 +21,22 @@
 3. Inspect the source and license diff.
 
    ```sh
-   git diff -- src/vendor/anti-slop UPSTREAM-SOURCE.json LICENSE.anti-slop
+   git diff -- src/vendor/anti-slop UPSTREAM-SOURCE.json LICENSE.anti-slop LICENSE.eslint-stylistic
    ```
 
    If upstream adds an import, inspect the required source before adding its
    path to the manifest. Do not copy the upstream package, installers, or skills.
    Keep vendored files exact. Put deliberate differences in local overrides.
+   Preserve nested third-party notices. If new runtime declarations or assets
+   are needed, include them in `scripts/build.mjs` and the exporter checks;
+   TypeScript does not copy input `.d.ts` files or license notices.
 
 4. Compare upstream changes with the retained ports described in
    [UPSTREAM.md](../UPSTREAM.md). Preserve stronger alias analysis, safety-comment
    validation, consumer rule IDs, options, diagnostics, and the measured limits.
+   Keep the Effect catch-handler rule's specific guidance ahead of generic Match
+   advice. Test compiled-plugin integration and Oxfmt stability as well as the
+   unchanged upstream RuleTester cases.
 
 5. Update `UPSTREAM.md` with the new pin and any changed decisions.
 

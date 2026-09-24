@@ -13,16 +13,29 @@ export function fileHashes(directory, entries) {
   const files = entries.flatMap((entry) => {
     const path = NodePath.join(directory, entry)
     const stat = NodeFS.lstatSync(path)
+
     if (stat.isSymbolicLink()) throw new Error(`Symlink not allowed: ${entry}`)
+
     return stat.isDirectory()
       ? Object.entries(fileHashes(path, NodeFS.readdirSync(path))).map(
           ([file, digest]) => [`${entry}/${file}`, digest],
         )
       : [[entry, sha256(NodeFS.readFileSync(path))]]
   })
+
   const hashes = new Map(files)
+
   return Object.fromEntries(
-    [...hashes.keys()].sort().map((file) => [file, hashes.get(file)]),
+    [...hashes.keys()]
+      // Keep provenance ordering independent of the host locale.
+      .sort((left, right) => {
+        if (left < right) return -1
+
+        if (left > right) return 1
+
+        return 0
+      })
+      .map((file) => [file, hashes.get(file)]),
   )
 }
 

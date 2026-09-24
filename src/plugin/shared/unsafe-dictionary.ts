@@ -46,6 +46,7 @@ function isEffectivelyEmptyInterface(
 ): boolean {
   if (declarations.length !== 1) return false
   const [type] = declarations
+
   return (
     type !== undefined &&
     type.extends.length === 0 &&
@@ -61,14 +62,19 @@ function unsafeDirectValue(
   resolvingAliases: ReadonlySet<string>,
 ): UnsafeDictionary["unsafeValue"] | null {
   const unwrapped = unwrapTransparentType(type)
+
   if (unwrapped.type === "TSUnknownKeyword") return "unknown"
+
   if (unwrapped.type === "TSAnyKeyword") return "any"
+
   if (unwrapped.type === "TSObjectKeyword") return "object"
+
   if (
     unwrapped.type === "TSTypeLiteral" &&
     isEffectivelyEmptyTypeLiteral(unwrapped)
   )
     return "empty-object"
+
   if (unwrapped.type === "TSUnionType") {
     return unwrapped.types.some(
       (member) =>
@@ -82,29 +88,38 @@ function unsafeDirectValue(
       ? "union"
       : null
   }
+
   if (unwrapped.type === "TSIntersectionType") {
     const unsafeMembers = unwrapped.types.map((member) =>
       unsafeDirectValue(member, environment, substitutions, resolvingAliases),
     )
+
     if (unsafeMembers.includes("any")) return "any"
+
     return unsafeMembers.length > 0 &&
       unsafeMembers.every((member) => member !== null)
       ? (unsafeMembers[0] ?? null)
       : null
   }
+
   if (unwrapped.type !== "TSTypeReference") return null
   const name = typeReferenceName(unwrapped)
+
   if (name === null) return null
+
   if (
     TRANSPARENT_WRAPPERS.has(name) &&
     isBuiltIn(name, unwrapped, environment)
   ) {
     const wrapped = unwrapped.typeArguments?.params[0]
+
     return wrapped === undefined
       ? null
       : unsafeDirectValue(wrapped, environment, substitutions, resolvingAliases)
   }
+
   const substitution = substitutions.get(name)
+
   if (substitution !== undefined) {
     return isUnappliedReferenceTo(substitution, name)
       ? null
@@ -115,18 +130,24 @@ function unsafeDirectValue(
           resolvingAliases,
         )
   }
+
   const interfaceDeclarations = environment.interfaces.get(name)
+
   if (interfaceDeclarations !== undefined) {
     return isEffectivelyEmptyInterface(interfaceDeclarations)
       ? "empty-object"
       : null
   }
+
   const alias = visibleTypeAlias(name, unwrapped, environment.typeAliases)
+
   if (alias === null || resolvingAliases.has(name)) return null
   const nextSubstitutions = aliasSubstitution(alias, unwrapped, substitutions)
+
   if (nextSubstitutions === null) return null
   const nextResolving = new Set(resolvingAliases)
   nextResolving.add(name)
+
   return unsafeDirectValue(
     alias.typeAnnotation,
     environment,
@@ -159,9 +180,11 @@ export function dictionaryValueTypes(
 
   if (unwrapped.type !== "TSTypeReference") return []
   const name = typeReferenceName(unwrapped)
+
   if (name === null) return []
 
   const substitution = substitutions.get(name)
+
   if (substitution !== undefined) {
     return isUnappliedReferenceTo(substitution, name)
       ? []
@@ -178,6 +201,7 @@ export function dictionaryValueTypes(
     isBuiltIn(name, unwrapped, environment)
   ) {
     const wrapped = unwrapped.typeArguments?.params[0]
+
     return wrapped === undefined
       ? []
       : dictionaryValueTypes(
@@ -190,6 +214,7 @@ export function dictionaryValueTypes(
 
   if (name === "Record" && isBuiltIn(name, unwrapped, environment)) {
     const value = unwrapped.typeArguments?.params[1] ?? null
+
     return value === null ? [] : [{ type: value, substitutions }]
   }
 
@@ -198,6 +223,7 @@ export function dictionaryValueTypes(
     isBuiltIn(name, unwrapped, environment)
   ) {
     const source = unwrapped.typeArguments?.params[0]
+
     return source === undefined
       ? []
       : dictionaryValueTypes(
@@ -209,11 +235,14 @@ export function dictionaryValueTypes(
   }
 
   const alias = visibleTypeAlias(name, unwrapped, environment.typeAliases)
+
   if (alias === null || resolvingAliases.has(name)) return []
   const nextSubstitutions = aliasSubstitution(alias, unwrapped, substitutions)
+
   if (nextSubstitutions === null) return []
   const nextResolving = new Set(resolvingAliases)
   nextResolving.add(name)
+
   return dictionaryValueTypes(
     alias.typeAnnotation,
     environment,
@@ -232,6 +261,7 @@ export function classifyUnsafeDictionaryValue(
     new Map(),
     new Set(),
   )
+
   return unsafeValue === null
     ? null
     : { kind: "unsafe-dictionary", unsafeValue }
@@ -253,7 +283,9 @@ export function classifyUnsafeDictionary(
       valueType.substitutions,
       new Set(),
     )
+
     if (unsafeValue !== null) return { kind: "unsafe-dictionary", unsafeValue }
   }
+
   return null
 }

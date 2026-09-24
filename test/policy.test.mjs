@@ -9,17 +9,22 @@ import * as NodeURL from "node:url"
 
 import strictestConfig, { effectConfig } from "../dist/config.js"
 import plugin from "../dist/plugin/index.js"
+import effectPlugin from "../dist/plugin/effect/index.js"
 
 const require = NodeModule.createRequire(import.meta.url)
+
 const oxlintPackage = require.resolve("oxlint/package.json")
+
 const oxlintBin = NodePath.join(
   NodePath.dirname(oxlintPackage),
   "bin",
   "oxlint",
 )
+
 const pluginPath = NodeURL.fileURLToPath(
   new URL("../dist/plugin/index.js", import.meta.url),
 )
+
 const fixtureDirectories = []
 
 NodeTest.after(() => {
@@ -32,6 +37,7 @@ function runRule(rule, source, filename = "fixture.ts", options) {
   const fixtureDirectory = NodeFS.mkdtempSync(
     NodePath.join(NodeOS.tmpdir(), "oxlint-policy-"),
   )
+
   fixtureDirectories.push(fixtureDirectory)
   const configPath = NodePath.join(fixtureDirectory, ".oxlintrc.json")
   const sourcePath = NodePath.join(fixtureDirectory, filename)
@@ -42,6 +48,7 @@ function runRule(rule, source, filename = "fixture.ts", options) {
       jsPlugins: rule.startsWith("project-effect/")
         ? effectConfig.jsPlugins
         : [{ name: "project", specifier: pluginPath }],
+      options: strictestConfig.options,
       rules: { [rule]: options ?? "error" },
     }),
   )
@@ -65,25 +72,31 @@ NodeTest.test(
       perf: "error",
       suspicious: "error",
     })
-    const activeRules = Object.values(strictestConfig.rules ?? {}).filter(
-      (configuration) => configuration !== "off",
+    NodeAssert.strict.equal(
+      strictestConfig.options.reportUnusedDisableDirectives,
+      "error",
     )
-    NodeAssert.strict.equal(activeRules.length, 28)
+
     for (const name of Object.keys(plugin.rules)) {
       NodeAssert.strict.equal(strictestConfig.rules[`project/${name}`], "error")
     }
+
     NodeAssert.strict.equal(
       strictestConfig.rules["oxc/no-accumulating-spread"],
       "error",
     )
-    NodeAssert.strict.equal(
-      strictestConfig.rules["project-effect/no-service-constructor-imports"],
-      undefined,
-    )
-    NodeAssert.strict.equal(
-      effectConfig.rules["project-effect/no-service-constructor-imports"],
-      "error",
-    )
+
+    for (const name of Object.keys(effectPlugin.rules)) {
+      NodeAssert.strict.equal(
+        strictestConfig.rules[`project-effect/${name}`],
+        undefined,
+      )
+      NodeAssert.strict.equal(
+        effectConfig.rules[`project-effect/${name}`],
+        "error",
+      )
+    }
+
     NodeAssert.strict.ok(strictestConfig.plugins?.includes("jsx-a11y"))
     NodeAssert.strict.equal(
       strictestConfig.rules?.["react/exhaustive-deps"],
@@ -115,6 +128,7 @@ NodeTest.test(
       "project-effect/no-service-constructor-imports",
       'import { makeService } from "./service";',
     )
+
     NodeAssert.strict.equal(
       result.status,
       1,
@@ -127,11 +141,25 @@ NodeTest.test(
   },
 )
 
+NodeTest.test("rejects unused waivers without a consumer CLI flag", () => {
+  const result = runRule(
+    "project/no-reflect-get",
+    "// oxlint-disable-next-line project/no-reflect-get\nexport const value = 1\n",
+  )
+
+  NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
+  NodeAssert.strict.match(
+    `${result.stdout}${result.stderr}`,
+    /Unused.*directive/iu,
+  )
+})
+
 NodeTest.test("enforces the native accumulating-spread companion", () => {
   const result = runRule(
     "oxc/no-accumulating-spread",
     "items.reduce((acc, item) => [...acc, item], []);",
   )
+
   NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
   NodeAssert.strict.match(
     `${result.stdout}${result.stderr}`,
@@ -144,6 +172,7 @@ NodeTest.test("requires canonical Node.js namespace imports", () => {
     "project/namespace-node-imports",
     'import { readFile } from "node:fs/promises"\nvoid readFile\n',
   )
+
   NodeAssert.strict.notEqual(result.status, 0)
   NodeAssert.strict.match(
     `${result.stdout}${result.stderr}`,
@@ -156,6 +185,7 @@ NodeTest.test("allows the callable node:test default import", () => {
     "project/namespace-node-imports",
     'import NodeTest from "node:test"\nNodeTest("works", () => {})\n',
   )
+
   NodeAssert.strict.equal(result.status, 0, `${result.stdout}${result.stderr}`)
 })
 
@@ -164,6 +194,7 @@ NodeTest.test("requires a host runtime adapter for platform reads", () => {
     "project/no-global-process-runtime",
     "export const platform = process.platform\n",
   )
+
   NodeAssert.strict.notEqual(result.status, 0)
   NodeAssert.strict.match(
     `${result.stdout}${result.stderr}`,
@@ -178,6 +209,7 @@ NodeTest.test("allows declared host runtime adapter files", () => {
     "src/host-runtime.ts",
     ["error", { allowFiles: ["src/host-runtime.ts"] }],
   )
+
   NodeAssert.strict.equal(result.status, 0, `${result.stdout}${result.stderr}`)
 })
 
@@ -186,6 +218,7 @@ NodeTest.test("allows injected process contracts", () => {
     "project/no-global-process-runtime",
     "export const platform = (process) => process.platform\n",
   )
+
   NodeAssert.strict.equal(result.status, 0, `${result.stdout}${result.stderr}`)
 })
 
@@ -194,6 +227,7 @@ NodeTest.test("allows injected globalThis contracts", () => {
     "project/no-global-process-runtime",
     "export const platform = (globalThis) => globalThis.process.platform\n",
   )
+
   NodeAssert.strict.equal(result.status, 0, `${result.stdout}${result.stderr}`)
 })
 
@@ -202,6 +236,7 @@ NodeTest.test("rejects inline Effect Schema compilation", () => {
     "project/no-inline-schema-compile",
     "const User = Schema.Struct({ name: Schema.String })\nexport const parse = (input) => Schema.decodeUnknownEffect(User)(input)\n",
   )
+
   NodeAssert.strict.notEqual(result.status, 0)
   NodeAssert.strict.match(`${result.stdout}${result.stderr}`, /Hoist Schema/u)
 })
@@ -212,6 +247,7 @@ NodeTest.test("rejects manual Effect runtimes in tests", () => {
     "test('effect', () => Effect.runPromise(Effect.void))\n",
     "fixture.test.ts",
   )
+
   NodeAssert.strict.notEqual(result.status, 0)
   NodeAssert.strict.match(
     `${result.stdout}${result.stderr}`,

@@ -10,15 +10,19 @@ export function unwrapExpressionParentheses(
   expression: ESTree.Expression,
 ): ESTree.Expression {
   let current = expression
+
   while (current.type === "ParenthesizedExpression")
     current = current.expression
+
   return current
 }
 
 function unwrapTypeParentheses(type: ESTree.TSType): ESTree.TSType {
   let current = type
+
   while (current.type === "TSParenthesizedType")
     current = current.typeAnnotation
+
   return current
 }
 
@@ -28,6 +32,7 @@ function typeReferenceName(type: ESTree.TSTypeReference): string | null {
 
 function isUnknownOrAnyType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)
+
   return (
     unwrapped.type === "TSUnknownKeyword" || unwrapped.type === "TSAnyKeyword"
   )
@@ -35,6 +40,7 @@ function isUnknownOrAnyType(type: ESTree.TSType): boolean {
 
 function isBroadRecordKeyType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)
+
   if (
     unwrapped.type === "TSStringKeyword" ||
     unwrapped.type === "TSNumberKeyword" ||
@@ -42,8 +48,10 @@ function isBroadRecordKeyType(type: ESTree.TSType): boolean {
   ) {
     return true
   }
+
   if (unwrapped.type === "TSUnionType")
     return unwrapped.types.every(isBroadRecordKeyType)
+
   return (
     unwrapped.type === "TSTypeReference" &&
     typeReferenceName(unwrapped) === "PropertyKey"
@@ -56,11 +64,13 @@ function isBroadRecordType(type: ESTree.TSType): boolean {
   if (unwrapped.type === "TSTypeReference") {
     if (typeReferenceName(unwrapped) === "Readonly") {
       const [inner] = unwrapped.typeArguments?.params ?? []
+
       return inner !== undefined && isBroadRecordType(inner)
     }
 
     if (typeReferenceName(unwrapped) !== "Record") return false
     const parameters = unwrapped.typeArguments?.params ?? []
+
     return (
       parameters.length === 2 &&
       parameters[0] !== undefined &&
@@ -73,8 +83,10 @@ function isBroadRecordType(type: ESTree.TSType): boolean {
   if (unwrapped.type !== "TSTypeLiteral" || unwrapped.members.length !== 1)
     return false
   const [member] = unwrapped.members
+
   const [parameter] =
     member?.type === "TSIndexSignature" ? member.parameters : []
+
   return (
     member?.type === "TSIndexSignature" &&
     member.parameters.length === 1 &&
@@ -86,12 +98,15 @@ function isBroadRecordType(type: ESTree.TSType): boolean {
 
 export function broadTypeKind(type: ESTree.TSType): BroadTypeKind | null {
   const unwrapped = unwrapTypeParentheses(type)
+
   if (
     unwrapped.type === "TSUnknownKeyword" ||
     unwrapped.type === "TSAnyKeyword"
   )
     return "top"
+
   if (unwrapped.type === "TSObjectKeyword") return "object"
+
   return isBroadRecordType(unwrapped) ? "record" : null
 }
 
@@ -105,6 +120,7 @@ export function assertionFromExpression(
   expression: ESTree.Expression,
 ): ESTree.TSAsExpression | ESTree.TSTypeAssertion | null {
   const unwrapped = unwrapExpressionParentheses(expression)
+
   return unwrapped.type === "TSAsExpression" ||
     unwrapped.type === "TSTypeAssertion"
     ? unwrapped
@@ -129,6 +145,8 @@ function typesHaveSameSyntax(
 
 function isDefinitelyObjectType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)
+
+  // oxlint-disable-next-line typescript/switch-exhaustiveness-check -- This predicate recognizes only definitely-object syntax; other AST variants intentionally return false.
   switch (unwrapped.type) {
     case "TSArrayType":
     case "TSConstructorType":
@@ -153,6 +171,7 @@ function isDefinitelyObjectType(type: ESTree.TSType): boolean {
 
 function isDefinitelyNarrowerRecordType(type: ESTree.TSType): boolean {
   const unwrapped = unwrapTypeParentheses(type)
+
   if (unwrapped.type === "TSTypeLiteral") {
     return unwrapped.members.some(
       (member) => member.type !== "TSIndexSignature",
@@ -160,13 +179,17 @@ function isDefinitelyNarrowerRecordType(type: ESTree.TSType): boolean {
   }
 
   if (unwrapped.type !== "TSTypeReference") return false
+
   if (typeReferenceName(unwrapped) === "Readonly") {
     const [inner] = unwrapped.typeArguments?.params ?? []
+
     return inner !== undefined && isDefinitelyNarrowerRecordType(inner)
   }
+
   if (typeReferenceName(unwrapped) !== "Record") return false
 
   const parameters = unwrapped.typeArguments?.params ?? []
+
   return (
     parameters.length === 2 &&
     parameters[1] !== undefined &&
@@ -181,8 +204,12 @@ export function assertionIsNarrower(
   assertedType: ESTree.TSType,
 ): boolean {
   if (broadTypeKind(assertedType) !== null) return false
+
   if (broadKind === "top") return true
+
   if (typesHaveSameSyntax(sourceText, evidence.type, assertedType)) return true
+
   if (broadKind === "object") return isDefinitelyObjectType(assertedType)
+
   return isDefinitelyNarrowerRecordType(assertedType)
 }

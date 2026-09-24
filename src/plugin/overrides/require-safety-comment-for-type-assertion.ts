@@ -32,6 +32,7 @@ function configuredSafetyMarkers(
     option?.markers?.flatMap((marker) =>
       marker.trim() ? [marker.trim()] : [],
     ) ?? []
+
   return markers.length > 0 ? markers : DEFAULT_SAFETY_MARKERS
 }
 
@@ -39,6 +40,7 @@ function markerPattern(markers: readonly string[]): RegExp {
   const alternation = markers
     .map((marker) => marker.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`))
     .join("|")
+
   return new RegExp(
     String.raw`(?:^|[^\p{L}\p{N}_])(?:${alternation})\s*:\s*\S`,
     "u",
@@ -66,11 +68,14 @@ function hasSafetyComment(
   pattern: RegExp,
 ): boolean {
   let current: ESTree.Node = node
+
   while (true) {
     if (hasSafetyJustificationBefore(sourceCode, current, node, pattern))
       return true
+
     if (commentOwnerKinds.has(current.type)) {
       const exportDeclaration = current.parent
+
       return (
         exportDeclaration.type === "ExportNamedDeclaration" &&
         exportDeclaration.declaration === current &&
@@ -82,6 +87,7 @@ function hasSafetyComment(
         )
       )
     }
+
     if (current.parent.type === "Program") return false
     current = current.parent
   }
@@ -120,8 +126,10 @@ export const requireSafetyCommentForTypeAssertionRule = defineRule({
     const [option] = context.options as readonly SafetyCommentOptions[]
     const markers = configuredSafetyMarkers(option)
     const pattern = markerPattern(markers)
+
     const checkAssertion = (node: TypeAssertion) => {
       if (isConstAssertion(node)) return
+
       if (hasSafetyComment(context.sourceCode, node, pattern)) return
       context.report({
         node,

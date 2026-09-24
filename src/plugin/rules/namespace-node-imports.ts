@@ -27,6 +27,7 @@ function toPascalCase(value: string): string {
 function expectedNamespaceAlias(source: string): string {
   const moduleName = source.slice("node:".length)
   const knownAlias = NODE_MODULE_ALIASES.get(moduleName)
+
   if (knownAlias !== undefined) return `Node${knownAlias}`
 
   return `Node${moduleName
@@ -49,14 +50,17 @@ export const namespaceNodeImportsRule = defineRule({
     return {
       ImportDeclaration(node) {
         const source = literalStringValue(node.source)
+
         if (source === null || !source.startsWith("node:")) return
 
         const expectedAlias = expectedNamespaceAlias(source)
+
         const namespaceImport =
           node.specifiers.length === 1 &&
           node.specifiers[0]?.type === "ImportNamespaceSpecifier"
             ? node.specifiers[0]
             : null
+
         const actualAlias =
           namespaceImport?.local.type === "Identifier"
             ? namespaceImport.local.name
@@ -69,6 +73,7 @@ export const namespaceNodeImportsRule = defineRule({
           node.specifiers[0]?.type === "ImportDefaultSpecifier"
             ? node.specifiers[0]
             : null
+
         const defaultAlias =
           defaultImport?.local.type === "Identifier"
             ? defaultImport.local.name

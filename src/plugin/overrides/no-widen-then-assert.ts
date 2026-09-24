@@ -30,11 +30,14 @@ export const noWidenThenAssertRule = defineRule({
       node: ESTree.TSAsExpression | ESTree.TSTypeAssertion,
     ) => {
       const expression = assertedExpression(node)
+
       if (expression.type !== "Identifier") return
 
       const variable = resolvedVariableForIdentifier(scopes, expression)
+
       if (variable === null) return
       const widened = widenedBinding(variable, scopes)
+
       if (
         widened === null ||
         node.start <= widened.declaredAt ||

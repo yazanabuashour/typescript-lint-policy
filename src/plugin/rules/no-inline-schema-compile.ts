@@ -39,10 +39,13 @@ function schemaCompilerMethod(
   callee: ESTree.CallExpression["callee"],
 ): string | null {
   const expression = unwrapExpression(callee)
+
   if (expression?.type !== "MemberExpression") return null
+
   if (!isIdentifier(unwrapExpression(expression.object), "Schema")) return null
 
   const method = getPropertyName(expression.property)
+
   return method !== null && COMPILER_METHODS.has(method) ? method : null
 }
 
@@ -50,13 +53,16 @@ function isStaticSchemaReference(
   node: ESTree.Node | null | undefined,
 ): boolean {
   const expression = unwrapExpression(node)
+
   if (expression?.type === "Identifier") {
     const [firstCharacter] = expression.name
+
     return (
       firstCharacter !== undefined &&
       firstCharacter.toUpperCase() === firstCharacter
     )
   }
+
   return expression?.type === "MemberExpression"
 }
 
@@ -64,25 +70,32 @@ function isNestedStaticSchemaCall(
   node: ESTree.Node | null | undefined,
 ): boolean {
   const expression = unwrapExpression(node)
+
   if (expression?.type !== "CallExpression") return false
   const callee = unwrapExpression(expression.callee)
+
   if (callee?.type !== "MemberExpression") return false
+
   if (!isIdentifier(unwrapExpression(callee.object), "Schema")) return false
 
   if (getPropertyName(callee.property) === "fromJsonString") {
     const [firstArgument] = expression.arguments
+
     return (
       isStaticSchemaReference(firstArgument) ||
       isNestedStaticSchemaCall(firstArgument)
     )
   }
+
   return true
 }
 
 function isImmediatelyInvoked(node: ESTree.CallExpression): boolean {
   const expression = unwrapExpression(node)
+
   if (expression === null || !("parent" in expression)) return false
   const parent = unwrapExpression(expression.parent)
+
   return (
     parent?.type === "CallExpression" &&
     unwrapExpression(parent.callee) === expression
@@ -125,15 +138,18 @@ export const noInlineSchemaCompileRule = defineRule({
       CallExpression(node) {
         if (functionDepth === 0) return
         const method = schemaCompilerMethod(node.callee)
+
         if (method === null || !isImmediatelyInvoked(node)) return
 
         const [firstArgument] = node.arguments
         const hasInlineSchema = isNestedStaticSchemaCall(firstArgument)
+
         if (!hasInlineSchema && !isStaticSchemaReference(firstArgument)) return
 
         const detail = hasInlineSchema
           ? "both the inline schema and its compiled function are rebuilt"
           : "the compiled function is rebuilt"
+
         context.report({
           node: node.callee,
           message: `Hoist Schema.${method}(...) to module scope: ${detail} on every call.`,

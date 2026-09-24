@@ -3,6 +3,7 @@ import * as NodeURL from "node:url"
 import { defineConfig } from "oxlint"
 
 const pluginExtension = import.meta.url.endsWith(".ts") ? "ts" : "js"
+
 const projectPlugin = NodeURL.fileURLToPath(
   new URL(`./plugin/index.${pluginExtension}`, import.meta.url),
 )
@@ -16,7 +17,8 @@ export const strictestConfig = defineConfig({
   plugins: ["eslint", "jsx-a11y", "oxc", "react", "unicorn", "typescript"],
   jsPlugins: [{ name: "project", specifier: projectPlugin }],
   options: {
-    typeAware: false,
+    reportUnusedDisableDirectives: "error",
+    typeAware: true,
     typeCheck: false,
   },
   rules: {
@@ -36,6 +38,10 @@ export const strictestConfig = defineConfig({
     "unicorn/no-array-sort": "off",
     "react/exhaustive-deps": "error",
     "react/rules-of-hooks": "error",
+    "typescript/await-thenable": "error",
+    "typescript/no-floating-promises": ["error", { ignoreVoid: false }],
+    "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": "error",
     "typescript/no-explicit-any": "error",
     "typescript/no-non-null-assertion": "error",
     "oxc/no-accumulating-spread": "error",
@@ -59,6 +65,7 @@ export const strictestConfig = defineConfig({
     "project/no-unknown-type-aliases": "error",
     "project/no-unsafe-dictionary-type": "error",
     "project/no-widen-then-assert": "error",
+    "project/require-readable-spacing": "error",
     "project/require-safety-comment-for-type-assertion": "error",
     // Receipt: receipts/size-limits.json
     "eslint/max-lines": [
@@ -82,7 +89,13 @@ export const effectConfig = defineConfig({
       ),
     },
   ],
-  rules: { "project-effect/no-service-constructor-imports": "error" },
+  rules: {
+    "project-effect/no-manual-effect-error-tag": "error",
+    "project-effect/no-manual-tag-comparison": "error",
+    "project-effect/no-manual-tagged-construction": "error",
+    "project-effect/no-service-constructor-imports": "error",
+    "project-effect/prefer-effect-match": "error",
+  },
 })
 
 export default strictestConfig

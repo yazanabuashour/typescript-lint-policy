@@ -8,6 +8,7 @@ type ExpressionWrapper =
   | ESTree.TSTypeAssertion
 
 export type AstNode = ESTree.Node
+
 export type VisitorKeys = Readonly<Record<string, readonly string[]>>
 
 function isNode(value: unknown): value is AstNode {
@@ -25,8 +26,10 @@ export function* childNodes(
   visitorKeys: VisitorKeys,
 ): Iterable<AstNode> {
   const keys = visitorKeys[node.type] ?? []
+
   for (const [key, value] of Object.entries(node)) {
     if (!keys.includes(key)) continue
+
     if (isNode(value)) yield value
     else if (Array.isArray(value)) {
       for (const child of value) if (isNode(child)) yield child
@@ -60,15 +63,18 @@ export function getPropertyName(
   expression: AstNode | null | undefined,
 ): string | null {
   if (expression === null || expression === undefined) return null
+
   if (
     expression.type === "Identifier" ||
     expression.type === "PrivateIdentifier"
   ) {
     return expression.name
   }
+
   if (expression.type === "Literal" && typeof expression.value === "string") {
     return expression.value
   }
+
   return null
 }
 

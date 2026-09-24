@@ -6,15 +6,20 @@ import { fileHashes, root, sha256, sourceHashes } from "./integrity.mjs"
 import "./upstream.mjs"
 
 const [argument, ...extra] = process.argv.slice(2)
+
 if (!argument || extra.length)
   throw new Error("Usage: npm run vendor -- <destination>")
+
 const resolved = NodePath.resolve(argument)
+
 const destination = NodePath.join(
   NodeFS.realpathSync(NodePath.dirname(resolved)),
   NodePath.basename(resolved),
 )
+
 function contains(parent, child) {
   const relative = NodePath.relative(parent, child)
+
   return (
     relative === "" ||
     (relative !== ".." &&
@@ -22,27 +27,33 @@ function contains(parent, child) {
       !NodePath.isAbsolute(relative))
   )
 }
+
 if (contains(root, destination) || contains(destination, root)) {
   throw new Error("Export outside the producer tree")
 }
+
 // Refuse replacement: the caller owns any existing consumer snapshot.
 if (NodeFS.existsSync(destination))
   throw new Error(
     "Destination must not exist; export to a new sibling directory and inspect before replacing",
   )
+
 const build = JSON.parse(
   NodeFS.readFileSync(NodePath.join(root, "dist/SOURCE.json"), "utf8"),
 )
+
 NodeAssert.deepEqual(
   sourceHashes(),
   build.inputs,
   "Build inputs changed; run npm run build",
 )
+
 NodeAssert.equal(
   sha256(JSON.stringify(build.inputs)),
   build.sourceSha256,
   "Build source digest mismatch",
 )
+
 NodeAssert.deepEqual(
   fileHashes(
     NodePath.join(root, "dist"),
@@ -53,9 +64,11 @@ NodeAssert.deepEqual(
   build.outputs,
   "Compiled output changed; run npm run build",
 )
+
 const producer = JSON.parse(
   NodeFS.readFileSync(NodePath.join(root, "package.json"), "utf8"),
 )
+
 const manifest = {
   name: producer.name,
   version: producer.version,
@@ -75,14 +88,17 @@ const manifest = {
     "UPSTREAM-SOURCE.json",
     "LICENSE",
     "LICENSE.anti-slop",
+    "LICENSE.eslint-stylistic",
     "SOURCE.json",
   ],
 }
+
 const status = NodeChildProcess.execFileSync(
   "git",
   ["status", "--porcelain", "--untracked-files=all"],
   { cwd: root, encoding: "utf8" },
 )
+
 const commit =
   status === ""
     ? NodeChildProcess.execFileSync("git", ["rev-parse", "HEAD"], {
@@ -90,7 +106,9 @@ const commit =
         encoding: "utf8",
       }).trim()
     : null
+
 const staging = NodeFS.mkdtempSync(`${destination}.tmp-`)
+
 try {
   for (const file of manifest.files.filter(
     (file) => !["README.md", "SOURCE.json"].includes(file),
@@ -99,6 +117,7 @@ try {
       recursive: true,
     })
   }
+
   NodeFS.copyFileSync(
     NodePath.join(root, "docs/consumer.md"),
     NodePath.join(staging, "README.md"),
@@ -126,6 +145,7 @@ try {
 } finally {
   NodeFS.rmSync(staging, { recursive: true, force: true })
 }
+
 console.log(
   `Exported ${build.sourceSha256} to ${destination}${commit === null ? " (uncommitted source; no commit claimed)" : ` (${commit})`}`,
 )

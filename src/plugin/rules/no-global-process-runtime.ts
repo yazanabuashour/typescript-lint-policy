@@ -14,6 +14,7 @@ import {
 } from "../shared/ast.ts"
 
 const RUNTIME_PROPERTIES = new Set(["platform", "arch"])
+
 const NODE_OS_MODULES = new Set(["node:os", "os"])
 
 function normalizePath(path: string): string {
@@ -24,6 +25,7 @@ function repoPath(filename: string, cwd: string): string {
   const normalizedFilename = normalizePath(filename)
   const normalizedCwd = normalizePath(cwd).replace(/\/+$/u, "")
   const prefix = `${normalizedCwd}/`
+
   return normalizedFilename.startsWith(prefix)
     ? normalizedFilename.slice(prefix.length)
     : normalizedFilename
@@ -37,9 +39,11 @@ function allowedFiles(
   options: Readonly<Options> | undefined,
 ): readonly string[] {
   const [option] = options ?? []
+
   if (option === undefined || option === null) return []
   // SAFETY: Oxlint validates this value against the rule schema before create runs.
   const config = option as HostRuntimeOptions
+
   return config.allowFiles ?? []
 }
 
@@ -49,6 +53,7 @@ function isAllowedFile(
   allowed: readonly string[],
 ): boolean {
   const path = repoPath(filename, cwd)
+
   return allowed.some(
     (suffix) => path === suffix || path.endsWith(`/${suffix}`),
   )
@@ -60,11 +65,14 @@ function resolveVariable(
 ): Variable | null {
   if (identifier.type !== "Identifier") return null
   let scope: Scope | null = sourceCode.getScope(identifier)
+
   while (scope !== null) {
     const variable = scope.set.get(identifier.name)
+
     if (variable !== undefined) return variable
     scope = scope.upper
   }
+
   return null
 }
 
@@ -74,10 +82,13 @@ function isUnshadowedGlobal(
   name: string,
 ): boolean {
   const expression = unwrapExpression(node)
+
   if (expression?.type !== "Identifier" || expression.name !== name) {
     return false
   }
+
   const variable = resolveVariable(sourceCode, expression)
+
   return variable === null || variable.defs.length === 0
 }
 
@@ -86,7 +97,9 @@ function isGlobalProcessObject(
   node: ESTree.Node,
 ): boolean {
   const expression = unwrapExpression(node)
+
   if (isUnshadowedGlobal(sourceCode, expression ?? node, "process")) return true
+
   if (expression?.type !== "MemberExpression") return false
 
   return (
@@ -121,27 +134,47 @@ export const noGlobalProcessRuntimeRule = defineRule({
     ],
   },
   create(context) {
-    const nodeOsNamespaces = new Set<string>()
-    const nodeOsRuntimeImports = new Map<string, string>()
+    const nodeOsNamespaces = new Set<Variable>()
+    const nodeOsRuntimeImports = new Map<Variable, string>()
     const allowed = allowedFiles(context.options)
 
     function trackImportDeclaration(node: ESTree.ImportDeclaration): void {
       const source = literalStringValue(node.source)
-      if (source === null || !NODE_OS_MODULES.has(source)) return
+
+      if (
+        source === null ||
+        !NODE_OS_MODULES.has(source) ||
+        node.importKind === "type"
+      )
+        return
+
+      const variables = context.sourceCode.getDeclaredVariables(node)
 
       for (const specifier of node.specifiers) {
-        const localName = specifier.local.name
+        if (
+          specifier.type === "ImportSpecifier" &&
+          specifier.importKind === "type"
+        )
+          continue
+
+        const variable = variables.find(
+          (binding) => binding.name === specifier.local.name,
+        )
+
+        if (variable === undefined) continue
+
         if (
           specifier.type === "ImportNamespaceSpecifier" ||
           specifier.type === "ImportDefaultSpecifier"
         ) {
-          nodeOsNamespaces.add(localName)
+          nodeOsNamespaces.add(variable)
           continue
         }
 
         const imported = getPropertyName(specifier.imported)
+
         if (imported !== null && RUNTIME_PROPERTIES.has(imported)) {
-          nodeOsRuntimeImports.set(localName, imported)
+          nodeOsRuntimeImports.set(variable, imported)
         }
       }
     }
@@ -150,17 +183,26 @@ export const noGlobalProcessRuntimeRule = defineRule({
       callee: ESTree.CallExpression["callee"],
     ): string | null {
       const expression = unwrapExpression(callee)
+
       if (expression?.type === "Identifier") {
-        return nodeOsRuntimeImports.get(expression.name) ?? null
+        const variable = resolveVariable(context.sourceCode, expression)
+
+        return variable === null
+          ? null
+          : (nodeOsRuntimeImports.get(variable) ?? null)
       }
+
       if (expression?.type !== "MemberExpression") return null
 
       const object = unwrapExpression(expression.object)
-      if (object?.type !== "Identifier" || !nodeOsNamespaces.has(object.name)) {
-        return null
-      }
+
+      if (object?.type !== "Identifier") return null
+      const variable = resolveVariable(context.sourceCode, object)
+
+      if (variable === null || !nodeOsNamespaces.has(variable)) return null
 
       const property = getPropertyName(expression.property)
+
       return property !== null && RUNTIME_PROPERTIES.has(property)
         ? property
         : null
@@ -171,7 +213,9 @@ export const noGlobalProcessRuntimeRule = defineRule({
       MemberExpression(node) {
         if (isAllowedFile(context.filename, context.cwd, allowed)) return
         const property = getPropertyName(node.property)
+
         if (property === null || !RUNTIME_PROPERTIES.has(property)) return
+
         if (!isGlobalProcessObject(context.sourceCode, node.object)) return
 
         context.report({ node, message: runtimeMessage(property) })
@@ -179,6 +223,7 @@ export const noGlobalProcessRuntimeRule = defineRule({
       CallExpression(node) {
         if (isAllowedFile(context.filename, context.cwd, allowed)) return
         const property = nodeOsRuntimeCall(node.callee)
+
         if (property === null) return
 
         context.report({ node, message: runtimeMessage(property) })

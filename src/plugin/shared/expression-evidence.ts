@@ -4,6 +4,7 @@ export function isPopulatedObjectExpression(
   expression: ESTree.Expression,
 ): boolean {
   let current = expression
+
   while (
     current.type === "ParenthesizedExpression" ||
     current.type === "TSAsExpression" ||
@@ -12,6 +13,7 @@ export function isPopulatedObjectExpression(
   ) {
     current = current.expression
   }
+
   return current.type === "ObjectExpression" && current.properties.length > 0
 }
 
@@ -19,6 +21,7 @@ export function isKnownEvidenceExpression(
   expression: ESTree.Expression,
 ): boolean {
   let current = expression
+
   while (
     current.type === "ParenthesizedExpression" ||
     current.type === "TSAsExpression" ||
@@ -28,7 +31,9 @@ export function isKnownEvidenceExpression(
   ) {
     current = current.expression
   }
+
   if (current.type === "ObjectExpression") return true
+
   return (
     current.type === "ArrayExpression" ||
     current.type === "ArrowFunctionExpression" ||
