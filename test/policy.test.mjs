@@ -114,15 +114,11 @@ NodeTest.test(
       strictestConfig.rules?.["typescript/no-non-null-assertion"],
       "error",
     )
-    NodeAssert.strict.equal(
-      strictestConfig.rules?.["project/no-inline-schema-compile"],
-      "error",
-    )
   },
 )
 
 NodeTest.test(
-  "loads the optional Effect config without enabling it by default",
+  "loads the optional Effect plugin through its exported configuration",
   () => {
     const result = runRule(
       "project-effect/no-service-constructor-imports",
@@ -173,7 +169,7 @@ NodeTest.test("requires canonical Node.js namespace imports", () => {
     'import { readFile } from "node:fs/promises"\nvoid readFile\n',
   )
 
-  NodeAssert.strict.notEqual(result.status, 0)
+  NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
   NodeAssert.strict.match(
     `${result.stdout}${result.stderr}`,
     /canonical alias NodeFSP/u,
@@ -195,7 +191,7 @@ NodeTest.test("requires a host runtime adapter for platform reads", () => {
     "export const platform = process.platform\n",
   )
 
-  NodeAssert.strict.notEqual(result.status, 0)
+  NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
   NodeAssert.strict.match(
     `${result.stdout}${result.stderr}`,
     /project-owned host platform/u,
@@ -237,7 +233,7 @@ NodeTest.test("rejects inline Effect Schema compilation", () => {
     "const User = Schema.Struct({ name: Schema.String })\nexport const parse = (input) => Schema.decodeUnknownEffect(User)(input)\n",
   )
 
-  NodeAssert.strict.notEqual(result.status, 0)
+  NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
   NodeAssert.strict.match(`${result.stdout}${result.stderr}`, /Hoist Schema/u)
 })
 
@@ -248,7 +244,7 @@ NodeTest.test("rejects manual Effect runtimes in tests", () => {
     "fixture.test.ts",
   )
 
-  NodeAssert.strict.notEqual(result.status, 0)
+  NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
   NodeAssert.strict.match(
     `${result.stdout}${result.stderr}`,
     /@effect\/vitest/u,

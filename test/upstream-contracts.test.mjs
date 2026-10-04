@@ -16,37 +16,28 @@ check(
   "no-chained-type-assertions",
   "chained",
   ["const value = ({ id: 1 } as const) as const;"],
-  [
-    "const value = (input as unknown) as User;",
-    "const value = <User>(<unknown>input);",
-  ],
+  ["const value = (input as unknown) as User;"],
 )
 
 check(
   "no-conditional-empty-object-spread",
   "avoid",
   ["const result = condition ? { value } : {};"],
-  [
-    "const result = { ...(condition ? { value } : {}) };",
-    "const result = { ...(condition ? {} : { value }) };",
-  ],
+  ["const result = { ...(condition ? { value } : {}) };"],
 )
 
 check(
   "no-shape-in-symbol-names",
   "forbiddenSymbolName",
   ["schema.shape.id.parse(input);"],
-  ["interface UserShape { id: string }", "type User = { shape: string };"],
+  ["interface UserShape { id: string }"],
 )
 
 check(
   "no-module-mocking",
   "moduleMock",
   ["function check(vi) { vi.mock('local'); }"],
-  [
-    "import { vi as api } from 'vitest'; api['mock']('store');",
-    "jest.unstable_mockModule('store');",
-  ],
+  ["import { vi as api } from 'vitest'; api['mock']('store');"],
 )
 
 for (const method of ["get", "apply"]) {

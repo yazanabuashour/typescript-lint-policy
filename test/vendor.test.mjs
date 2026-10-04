@@ -1,11 +1,35 @@
 import * as NodeAssert from "node:assert/strict"
 import * as NodeChildProcess from "node:child_process"
+import * as NodeCrypto from "node:crypto"
 import * as NodeFS from "node:fs"
 import * as NodeOS from "node:os"
 import * as NodePath from "node:path"
 import * as NodeTest from "node:test"
 import * as NodeURL from "node:url"
-import { fileHashes, root, sha256 } from "../scripts/integrity.mjs"
+
+const root = NodeURL.fileURLToPath(new URL("../", import.meta.url))
+
+function sha256(bytes) {
+  return NodeCrypto.createHash("sha256").update(bytes).digest("hex")
+}
+
+function snapshotFiles(directory) {
+  return Object.fromEntries(
+    NodeFS.readdirSync(directory, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) =>
+        NodePath.relative(
+          directory,
+          NodePath.join(entry.parentPath, entry.name),
+        ),
+      )
+      .sort()
+      .map((file) => [
+        file,
+        sha256(NodeFS.readFileSync(NodePath.join(directory, file))),
+      ]),
+  )
+}
 
 function runExporter(producer, destination) {
   return NodeChildProcess.spawnSync(
@@ -72,10 +96,8 @@ NodeTest.test(
       NodeFS.readFileSync(NodePath.join(destination, "SOURCE.json"), "utf8"),
     )
 
-    const files = fileHashes(
-      destination,
-      NodeFS.readdirSync(destination).filter((file) => file !== "SOURCE.json"),
-    )
+    const files = snapshotFiles(destination)
+    delete files["SOURCE.json"]
 
     NodeAssert.deepEqual(source.files, files)
     NodeAssert.equal(source.contentSha256, sha256(JSON.stringify(files)))
@@ -142,11 +164,11 @@ NodeTest.test(
       packed.files.map((file) => file.path).sort(),
       [...Object.keys(files), "SOURCE.json"].sort(),
     )
-    NodeAssert.notEqual(runExporter(root, destination).status, 0)
-    NodeAssert.deepEqual(
-      NodeFS.readFileSync(NodePath.join(destination, "SOURCE.json")),
-      Buffer.from(`${JSON.stringify(source, null, 2)}\n`),
-    )
+    const beforeRefusal = snapshotFiles(destination)
+    const refused = runExporter(root, destination)
+    NodeAssert.equal(refused.status, 1, refused.stdout + refused.stderr)
+    NodeAssert.match(refused.stderr, /Destination must not exist/u)
+    NodeAssert.deepEqual(snapshotFiles(destination), beforeRefusal)
   },
 )
 
@@ -204,7 +226,7 @@ NodeTest.test(
       const original = NodeFS.readFileSync(path)
       NodeFS.appendFileSync(path, "\n// changed\n")
       const result = runExporter(producer, destination)
-      NodeAssert.notEqual(result.status, 0)
+      NodeAssert.equal(result.status, 1, result.stdout + result.stderr)
       NodeAssert.ok(result.stderr.includes(expected), result.stderr)
       NodeAssert.equal(NodeFS.existsSync(destination), false)
       NodeFS.writeFileSync(path, original)
