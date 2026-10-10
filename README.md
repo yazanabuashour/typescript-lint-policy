@@ -81,6 +81,15 @@ test rule remains in the default.
   checks directly inside predicate and assertion functions. The default is false.
 - Conditional empty-object spreads remain banned without an autofix. Omitting
   a property is not equivalent to assigning `undefined`.
+- `project/no-multiline-comments` limits ordinary comments to one physical line,
+  including adjacent `//` prose runs and `/* ... */` blocks. Longer `/** ... */`
+  documentation is allowed on directly exported declarations and their
+  non-private class, interface, type-literal, enum, and exported namespace members.
+  Separate export lists do not turn internal comments into API documentation.
+  Shebangs, recognized tool directives, and copyright/license notices are exempt.
+  Tool directives also break adjacent prose runs. The rule does not judge whether
+  prose is necessary or identify historical metadata; review owns those decisions.
+  It offers no shortening autofix.
 - `project/require-safety-comment-for-type-assertion` requires a non-empty
   justification. Its optional `markers` array replaces the default `["SAFETY"]`.
   Comments above exported declarations count.

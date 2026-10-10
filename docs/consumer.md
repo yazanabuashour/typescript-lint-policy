@@ -42,9 +42,13 @@ export default defineConfig({ extends: [policy, effectConfig] })
 
 The default rejects unhandled promises (including `void promise`), misused
 promises, awaiting non-thenables, and non-exhaustive union switches. It also
-enforces unused-disable directives and structural blank lines. Run
-Oxlint's `--fix` for spacing fixes and Oxfmt for formatting; neither tool replaces
-the other. Effect consumers get tagged construction, branching, error-handler,
+enforces unused-disable directives, structural blank lines, and one-line ordinary
+comments. Multiline API doc comments require a directly exported declaration or
+its non-private members, not a separate export list. Shebangs, recognized tool
+directives, and legal notices remain exempt. Keep the invariant behind a safety
+assertion on one line; review decides whether other prose adds information.
+Run Oxlint's `--fix` for spacing fixes and Oxfmt for formatting; neither tool
+replaces the other. Effect consumers get tagged construction, branching, error-handler,
 and service-ownership rules through `effectConfig`.
 
 Keep consumer-specific exemptions in the consumer's config. The snapshot does
