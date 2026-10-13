@@ -38,9 +38,12 @@ if (NodeFS.existsSync(destination))
     "Destination must not exist; export to a new sibling directory and inspect before replacing",
   )
 
-const build = JSON.parse(
-  NodeFS.readFileSync(NodePath.join(root, "dist/SOURCE.json"), "utf8"),
+const buildManifest = NodeFS.readFileSync(
+  NodePath.join(root, "dist/SOURCE.json"),
+  "utf8",
 )
+
+const build = JSON.parse(buildManifest)
 
 NodeAssert.deepEqual(
   sourceHashes(),
@@ -127,6 +130,22 @@ try {
     `${JSON.stringify(manifest, null, 2)}\n`,
   )
   const files = fileHashes(staging, NodeFS.readdirSync(staging))
+  NodeAssert.equal(
+    files["dist/SOURCE.json"],
+    sha256(buildManifest),
+    "Build manifest changed while copying; run npm run build",
+  )
+  NodeAssert.deepEqual(
+    Object.fromEntries(
+      Object.entries(files)
+        .filter(
+          ([file]) => file.startsWith("dist/") && file !== "dist/SOURCE.json",
+        )
+        .map(([file, digest]) => [file.slice("dist/".length), digest]),
+    ),
+    build.outputs,
+    "Compiled output changed while copying; run npm run build",
+  )
   NodeFS.writeFileSync(
     NodePath.join(staging, "SOURCE.json"),
     `${JSON.stringify(

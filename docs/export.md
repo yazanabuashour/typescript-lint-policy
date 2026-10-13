@@ -32,6 +32,11 @@ snapshot.
 
 The build records every source input and compiled output digest in
 `dist/SOURCE.json`. Export refuses changed inputs or outputs until you rebuild.
+It also checks the copied build manifest and all copied outputs before publishing
+the destination. If those checks fail, it removes staging and leaves no snapshot.
+Export from a quiescent checkout: Git provenance observes cleanliness but does
+not lock the working tree.
+
 The exported root `SOURCE.json` records the source digest, file digests, and a
 content digest. It records `HEAD` only when Git reports a clean producer tree.
 Dirty bytes are identified by content, never mislabeled as a commit. A source

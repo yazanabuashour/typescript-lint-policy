@@ -31,12 +31,83 @@ function snapshotFiles(directory) {
   )
 }
 
-function runExporter(producer, destination) {
+function runExporter(producer, destination, preload) {
   return NodeChildProcess.spawnSync(
     process.execPath,
-    [NodePath.join(producer, "scripts/vendor.mjs"), destination],
+    [
+      ...(preload === undefined ? [] : ["--import", preload]),
+      NodePath.join(producer, "scripts/vendor.mjs"),
+      destination,
+    ],
     { encoding: "utf8" },
   )
+}
+
+function assertConsumerUsage(destination, directory, manifest) {
+  for (const [name, source] of [
+    [manifest.name, destination],
+    ...Object.keys(manifest.peerDependencies).map((name) => [
+      name,
+      NodePath.join(root, "node_modules", name),
+    ]),
+  ]) {
+    const dependency = NodePath.join(directory, "node_modules", name)
+    NodeFS.mkdirSync(NodePath.dirname(dependency), { recursive: true })
+    NodeFS.symlinkSync(source, dependency, "dir")
+  }
+
+  NodeFS.writeFileSync(
+    NodePath.join(directory, "package.json"),
+    '{"type":"module"}',
+  )
+  const configPath = NodePath.join(directory, "oxlint.config.ts")
+  NodeFS.writeFileSync(
+    configPath,
+    `import policy, { effectConfig } from "@yazanabuashour/oxlint-config"
+import { defineConfig } from "oxlint"
+export default defineConfig({ extends: [policy, effectConfig] })
+`,
+  )
+  NodeFS.writeFileSync(
+    NodePath.join(directory, "tsconfig.json"),
+    JSON.stringify({
+      compilerOptions: {
+        strict: true,
+        module: "NodeNext",
+        target: "ES2024",
+        types: [],
+      },
+      include: ["oxlint.config.ts"],
+    }),
+  )
+  NodeChildProcess.execFileSync(
+    NodePath.join(root, "node_modules/.bin/tsc"),
+    ["--noEmit", "-p", NodePath.join(directory, "tsconfig.json")],
+    { encoding: "utf8" },
+  )
+
+  const sourcePath = NodePath.join(directory, "fixture.ts")
+
+  const lint = (source) => {
+    NodeFS.writeFileSync(sourcePath, source)
+
+    return NodeChildProcess.spawnSync(
+      NodePath.join(root, "node_modules/.bin/oxlint"),
+      ["--config", configPath, sourcePath],
+      { cwd: directory, encoding: "utf8" },
+    )
+  }
+
+  const rejected = lint(
+    'import { makeService } from "./service";\nexport const value = Reflect.get({}, "value");\nexport const service = makeService(value);\n',
+  )
+
+  NodeAssert.equal(rejected.status, 1, rejected.stdout + rejected.stderr)
+  NodeAssert.match(rejected.stdout, /no-reflect-get/u)
+  NodeAssert.match(rejected.stdout, /no-service-constructor-imports/u)
+
+  const accepted = lint("export const value = 1;\n")
+  NodeAssert.equal(accepted.status, 0, accepted.stdout + accepted.stderr)
 }
 
 function assertBuildAssets(destination, build) {
@@ -58,7 +129,7 @@ function assertBuildAssets(destination, build) {
 
 NodeTest.test(
   "exports a usable, stripped snapshot with byte-addressed provenance",
-  async (context) => {
+  (context) => {
     const temporary = NodeFS.mkdtempSync(
       NodePath.join(NodeOS.tmpdir(), "lint-policy-export-"),
     )
@@ -110,6 +181,16 @@ NodeTest.test(
     )
 
     NodeAssert.equal(source.sourceSha256, sha256(JSON.stringify(build.inputs)))
+    NodeAssert.deepEqual(
+      Object.fromEntries(
+        Object.entries(files)
+          .filter(
+            ([file]) => file.startsWith("dist/") && file !== "dist/SOURCE.json",
+          )
+          .map(([file, digest]) => [file.slice("dist/".length), digest]),
+      ),
+      build.outputs,
+    )
 
     assertBuildAssets(destination, build)
 
@@ -128,28 +209,7 @@ NodeTest.test(
           }).trim()
         : null,
     )
-    // Model a consumer with the declared peers installed in its node_modules.
-    NodeFS.symlinkSync(
-      NodePath.join(root, "node_modules"),
-      NodePath.join(temporary, "node_modules"),
-      "dir",
-    )
-
-    const config = await import(
-      NodeURL.pathToFileURL(NodePath.join(destination, "dist/config.js"))
-    )
-
-    const plugin = await import(
-      NodeURL.pathToFileURL(config.default.jsPlugins[0].specifier)
-    )
-
-    NodeAssert.ok(plugin.default.rules["no-unknown-parameters"])
-    NodeAssert.equal(
-      config.effectConfig.rules[
-        "project-effect/no-service-constructor-imports"
-      ],
-      "error",
-    )
+    assertConsumerUsage(destination, temporary, manifest)
 
     const [packed] = Object.values(
       JSON.parse(
@@ -169,6 +229,46 @@ NodeTest.test(
     NodeAssert.equal(refused.status, 1, refused.stdout + refused.stderr)
     NodeAssert.match(refused.stderr, /Destination must not exist/u)
     NodeAssert.deepEqual(snapshotFiles(destination), beforeRefusal)
+  },
+)
+
+NodeTest.test(
+  "refuses build changes during copying and removes staging",
+  (context) => {
+    const temporary = NodeFS.mkdtempSync(
+      NodePath.join(NodeOS.tmpdir(), "policy-copy-"),
+    )
+
+    context.after(() =>
+      NodeFS.rmSync(temporary, { recursive: true, force: true }),
+    )
+    const destination = NodePath.join(temporary, "snapshot")
+    const preload = NodePath.join(temporary, "mutate-copy.mjs")
+
+    for (const [file, expected] of [
+      ["config.js", "Compiled output changed while copying"],
+      ["SOURCE.json", "Build manifest changed while copying"],
+    ]) {
+      NodeFS.writeFileSync(
+        preload,
+        `import fs from "node:fs"
+import path from "node:path"
+import { syncBuiltinESMExports } from "node:module"
+const copy = fs.cpSync
+fs.cpSync = (source, destination, options) => {
+  copy(source, destination, options)
+  if (source === ${JSON.stringify(NodePath.join(root, "dist"))}) {
+    fs.appendFileSync(path.join(destination, ${JSON.stringify(file)}), "\\n")
+  }
+}
+syncBuiltinESMExports()
+`,
+      )
+      const result = runExporter(root, destination, preload)
+      NodeAssert.equal(result.status, 1, result.stdout + result.stderr)
+      NodeAssert.ok(result.stderr.includes(expected), result.stderr)
+      NodeAssert.deepEqual(NodeFS.readdirSync(temporary), ["mutate-copy.mjs"])
+    }
   },
 )
 
