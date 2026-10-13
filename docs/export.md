@@ -21,11 +21,12 @@
 4. Inspect the snapshot and its `SOURCE.json`. Compare it with the consumer's
    current snapshot before replacing that directory.
 
-5. Install the snapshot through a local file dependency and run the consumer's
-   gates. Follow the consumer's instructions for updating its dependency lockfile.
+5. Follow [Install and configure](consumer.md#install-and-configure) for the
+   local file dependency and exact peers, then run the consumer's gates. Follow
+   the consumer's instructions for updating its dependency lockfile.
 
 The export contains compiled JavaScript, declarations, the consumer manifest,
-notices, provenance, measured receipts, and a consumer update README. It excludes
+notices, provenance, measured receipts, and a consumer usage README. It excludes
 development scripts, tests, and dependencies. No build runs in the stripped
 snapshot.
 
