@@ -1,5 +1,5 @@
 {
-  "sourceSha256": "094deb2dfcb4b0221cb6a5fc331f10f39552e472e017c103054c55e1ae33f2a8",
+  "sourceSha256": "8a89ee7465ff91615f041effd30a7dac49241acb04188b05f8c8a32fb3029a0b",
   "inputs": {
     "UPSTREAM-SOURCE.json": "5ba9406c66eb8fcc0579b6740bdebb7e583b50ddb5bce1d5261c76e9d0a11296",
     "package-lock.json": "8a8bf94bbce8da6ad578281af27f492baa45253a849c1666f2671668b5e579a3",
@@ -29,7 +29,7 @@
     "src/plugin/rules/no-global-process-runtime.ts": "1a7c264b63302136718b0d557951e0697ca301792b05cb30b589a7f03f1ca761",
     "src/plugin/rules/no-inline-schema-compile.ts": "50d9003ae2ae3efacc4e51c8966f22985eddac554725281496b704a21137ac8c",
     "src/plugin/rules/no-manual-effect-runtime-in-tests.ts": "403e734ea604ee70517ad238933b8cb9e9c72a1bba55c4889615c9714b801efd",
-    "src/plugin/rules/no-multiline-comments.ts": "a9adfca69284698c3cb13f2c2761a6a86741a65904f2af09555f5d4ef7d0c858",
+    "src/plugin/rules/no-multiline-comments.ts": "62941123fee7a368ae062913ee55196e4a4fdeb72837184e50357ed02ee7686d",
     "src/plugin/shared/ast.ts": "45d90d571c565ddd2750e56d1844fccbf9c480d2113f21f7f503b5c0fdf263a8",
     "src/plugin/shared/expression-evidence.ts": "661a1d86e45249b0b2d0ef8d2cbaf1978af8a15f10b14a6d55e9a81d2e6ea659",
     "src/plugin/shared/known-evidence.ts": "d9dff732e916449c3340eed159596b54580fbdc6d0ce46f0d6a67624f0f979e8",
@@ -133,7 +133,7 @@
     "plugin/rules/no-manual-effect-runtime-in-tests.d.ts": "382a13bb0357581df59c03acea576b56e5ecb7fa80e7275470582a1665877e5d",
     "plugin/rules/no-manual-effect-runtime-in-tests.js": "652859d2208a468a83545d4a0f6e540b8aa6dbdb15d0ebd72ff8c5017e8288e2",
     "plugin/rules/no-multiline-comments.d.ts": "9775c349b41d0edde7e72175de1117441a5172dc2d7ee0ebbe2bc038b88690c9",
-    "plugin/rules/no-multiline-comments.js": "8d3d169fa37a5e1166fd0c1517654003bcf11359e304060df43e3fc91a18166f",
+    "plugin/rules/no-multiline-comments.js": "5a84c74ef090421e1a03bc0cda7a0b94677bd7d84d4a1ff69d2ba824aa7b0a25",
     "plugin/shared/ast.d.ts": "aa6de19caa02b1c1147d7a9f89f75c1a9e76b6278640de1ca00691bbd70d75c1",
     "plugin/shared/ast.js": "25040f9d411cdd83ac226a650c32a3631a06286e9f9f15a4581e366080c2f0d7",
     "plugin/shared/expression-evidence.d.ts": "4e8ae511953e73f7a88d0a08dc08911029b57c51e9d6d53dcb8fccb50efdfdd8",

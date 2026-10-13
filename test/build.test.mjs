@@ -32,8 +32,11 @@ function copyProducer(producer) {
 NodeTest.test(
   "build publication preserves prior output on failure",
   (context) => {
-    const temporary = NodeFS.mkdtempSync(
-      NodePath.join(NodeOS.tmpdir(), "lint-policy-build-test-"),
+    // Build paths derive from import.meta.url, which Node resolves through symlinks such as macOS /var.
+    const temporary = NodeFS.realpathSync(
+      NodeFS.mkdtempSync(
+        NodePath.join(NodeOS.tmpdir(), "lint-policy-build-test-"),
+      ),
     )
 
     context.after(() =>

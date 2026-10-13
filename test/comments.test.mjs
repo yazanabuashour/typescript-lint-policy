@@ -17,6 +17,7 @@ tester.run(
       "export interface PublicApi { /** Member contract.\n * More detail.\n */ method(): void }\nexport type Shape = { /** Field contract.\n * More detail.\n */ value: number };",
       "export enum State { /** Public variant.\n * More detail.\n */ Ready }\nexport namespace Api { /** Public contract.\n * More detail.\n */ export function run() {} }",
       "export /** Public contract.\n * More detail.\n */ const publicValue = 1;",
+      "/** Public contract.\n * More detail.\n */\n@Injectable()\nexport class Service { /** Member contract.\n * More detail.\n */ @Inject() public dependency: unknown }",
       "#!/usr/bin/env node\n/* eslint-disable no-console,\n no-debugger */\nconsole.log('ok');\ndebugger;",
       "/* Copyright Example Authors.\n * Redistribution permitted under MIT.\n */\n// SPDX-License-Identifier: MIT\n// A required legal notice.\nconst value = 1;",
     ],

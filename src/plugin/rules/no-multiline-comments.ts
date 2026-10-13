@@ -19,7 +19,8 @@ function exportedDocs(sourceCode: SourceCode): Set<Comment> {
   const docs = new Set<Comment>()
 
   const addDoc = (node: ESTree.Node) => {
-    const comment = sourceCode.getCommentsBefore(node).at(-1)
+    const anchor = ("decorators" in node && node.decorators?.[0]) || node
+    const comment = sourceCode.getCommentsBefore(anchor).at(-1)
 
     if (
       comment?.type === "Block" &&

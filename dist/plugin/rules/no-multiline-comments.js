@@ -7,7 +7,8 @@ function isToolDirective(comment) {
 function exportedDocs(sourceCode) {
     const docs = new Set();
     const addDoc = (node) => {
-        const comment = sourceCode.getCommentsBefore(node).at(-1);
+        const anchor = ("decorators" in node && node.decorators?.[0]) || node;
+        const comment = sourceCode.getCommentsBefore(anchor).at(-1);
         if (comment?.type === "Block" &&
             sourceCode.getText(comment).startsWith("/**")) {
             docs.add(comment);
