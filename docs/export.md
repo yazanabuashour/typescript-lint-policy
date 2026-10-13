@@ -31,7 +31,10 @@ development scripts, tests, and dependencies. No build runs in the stripped
 snapshot.
 
 The build records every source input and compiled output digest in
-`dist/SOURCE.json`. Export refuses changed inputs or outputs until you rebuild.
+`dist/SOURCE.json`. It stages output on the producer filesystem and restores the
+previous `dist/` if publication fails. If restoration also fails, the error reports
+the retained previous build's path for manual recovery.
+Export refuses changed inputs or outputs until you rebuild.
 It also checks the copied build manifest and all copied outputs before publishing
 the destination. If those checks fail, it removes staging and leaves no snapshot.
 Export from a quiescent checkout: Git provenance observes cleanliness but does
