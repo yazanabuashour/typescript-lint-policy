@@ -157,7 +157,7 @@ export const noInlineSchemaCompileRule = defineRule({
 
         context.report({
           node: node.callee,
-          message: `Hoist Schema.${method}(...) to module scope: ${detail} on every call.`,
+          message: `Reuse Schema.${method}(...) from the schema's owning scope: ${detail} on every call.`,
         })
       },
     }

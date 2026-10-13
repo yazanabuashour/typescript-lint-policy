@@ -1,5 +1,5 @@
 {
-  "sourceSha256": "8a89ee7465ff91615f041effd30a7dac49241acb04188b05f8c8a32fb3029a0b",
+  "sourceSha256": "36913bcbc75f0d09ceb2c7deaec8d8d1ae239b2141342cd25d937592e51f1421",
   "inputs": {
     "UPSTREAM-SOURCE.json": "5ba9406c66eb8fcc0579b6740bdebb7e583b50ddb5bce1d5261c76e9d0a11296",
     "package-lock.json": "8a8bf94bbce8da6ad578281af27f492baa45253a849c1666f2671668b5e579a3",
@@ -27,7 +27,7 @@
     "src/plugin/overrides/require-safety-comment-for-type-assertion.ts": "3daf4fdc9eef26377c47d5dc84e0ea8d9dba4da14434cd23f0b5f93095894137",
     "src/plugin/rules/namespace-node-imports.ts": "dcf9b1b5b784bfa82edd6e0a9101a48d07314a2559da125c903d08df2365e3f9",
     "src/plugin/rules/no-global-process-runtime.ts": "1a7c264b63302136718b0d557951e0697ca301792b05cb30b589a7f03f1ca761",
-    "src/plugin/rules/no-inline-schema-compile.ts": "50d9003ae2ae3efacc4e51c8966f22985eddac554725281496b704a21137ac8c",
+    "src/plugin/rules/no-inline-schema-compile.ts": "cdcaff3adc9d00fa651c1a387903aeb49dba9d8811b5da31ffa4d6992b16b45b",
     "src/plugin/rules/no-manual-effect-runtime-in-tests.ts": "403e734ea604ee70517ad238933b8cb9e9c72a1bba55c4889615c9714b801efd",
     "src/plugin/rules/no-multiline-comments.ts": "62941123fee7a368ae062913ee55196e4a4fdeb72837184e50357ed02ee7686d",
     "src/plugin/shared/ast.ts": "45d90d571c565ddd2750e56d1844fccbf9c480d2113f21f7f503b5c0fdf263a8",
@@ -129,7 +129,7 @@
     "plugin/rules/no-global-process-runtime.d.ts": "ec6358daf23f2c2808fa826f3043a205dbb1223c93e713a58da0c9e360d979e4",
     "plugin/rules/no-global-process-runtime.js": "6267f58f4c0022245efd9315b4b6476947315cd48878a8a33741824dba217471",
     "plugin/rules/no-inline-schema-compile.d.ts": "66c18c2bdd61d72a78b3a2b6b95ba60e5e7f681f394a667e8c9fe5600310e78b",
-    "plugin/rules/no-inline-schema-compile.js": "55245fc499223b76ffa0b3e6585a2f2bfdbfc6d2c0b842802ba40d15d803170c",
+    "plugin/rules/no-inline-schema-compile.js": "de0bbd849bb687fa0b0ea6f618938f7cf1d8988648544e81cf40a1f4b1ea041e",
     "plugin/rules/no-manual-effect-runtime-in-tests.d.ts": "382a13bb0357581df59c03acea576b56e5ecb7fa80e7275470582a1665877e5d",
     "plugin/rules/no-manual-effect-runtime-in-tests.js": "652859d2208a468a83545d4a0f6e540b8aa6dbdb15d0ebd72ff8c5017e8288e2",
     "plugin/rules/no-multiline-comments.d.ts": "9775c349b41d0edde7e72175de1117441a5172dc2d7ee0ebbe2bc038b88690c9",

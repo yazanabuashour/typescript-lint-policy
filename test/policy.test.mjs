@@ -238,8 +238,26 @@ NodeTest.test("rejects inline Effect Schema compilation", () => {
       1,
       `${result.stdout}${result.stderr}`,
     )
-    NodeAssert.strict.match(`${result.stdout}${result.stderr}`, /Hoist Schema/u)
+    NodeAssert.strict.match(
+      `${result.stdout}${result.stderr}`,
+      /Reuse Schema\.decodeUnknownEffect\(\.\.\.\) from the schema's owning scope: the compiled function is rebuilt on every call\./u,
+    )
   }
+
+  const dynamic = runRule(
+    "project/no-inline-schema-compile",
+    "export const parse = (schema, input) => Schema.decodeUnknownEffect(Schema.Array(schema))(input);",
+  )
+
+  NodeAssert.strict.equal(
+    dynamic.status,
+    1,
+    `${dynamic.stdout}${dynamic.stderr}`,
+  )
+  NodeAssert.strict.match(
+    `${dynamic.stdout}${dynamic.stderr}`,
+    /Reuse Schema\.decodeUnknownEffect\(\.\.\.\) from the schema's owning scope: both the inline schema and its compiled function are rebuilt on every call\./u,
+  )
 
   const computed = runRule(
     "project/no-inline-schema-compile",
