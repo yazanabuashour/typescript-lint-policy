@@ -1,5 +1,6 @@
 import { containsUnknownType, functionParameterBindingName, functionParameterTypeAnnotation, } from "../../vendor/anti-slop/src/shared/function-parameters.js";
-import { classifyUnsafeDictionaryValue, isKnownEvidenceExpression, } from "./dictionary-types.js";
+import { isKnownEvidenceExpression } from "./expression-evidence.js";
+import { classifyUnsafeDictionaryValue } from "./unsafe-dictionary.js";
 function unwrapExpression(expression) {
     let current = expression;
     while (current.type === "ParenthesizedExpression" ||

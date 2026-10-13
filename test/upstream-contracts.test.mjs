@@ -140,12 +140,14 @@ check(
     "type WithSchema<T extends Readonly<Record<string, unknown>>> = T;",
     "type Wrapped<T> = { value: T }; type Safe = Record<string, Wrapped<unknown>>;",
     "interface User { id: string } type Safe = Record<string, unknown & User>;",
+    "type Value = string; type Concrete = Value; type Index<Value> = Record<string, Concrete>; type Safe = Index<unknown>;",
   ],
   [
     "type WithSchema<T = Record<string, unknown>> = T;",
     "type Identity<T> = T; type Unsafe = Record<string, Identity<unknown>>;",
     "function local() { type Record<K,V> = { key: K; value: V }; type Safe = Record<string, unknown>; } function other() { type Unsafe = Record<string, unknown>; }",
     "interface Empty { brand?: never } type Unsafe = Record<string, Empty>;",
+    "type Identity<T> = T; type Index<T> = Record<string, T>; type Unsafe = Index<Identity<Identity<unknown>>>;",
   ],
 )
 
@@ -158,6 +160,9 @@ check(
     "type Index<K extends PropertyKey, V> = Record<K, V>; const index: Index<'a', number> = { a: 1 };",
     "const index = { a: 1 } satisfies Record<string, number>;",
     "function guard(value: unknown): value is User { return true; } declare const input: unknown; guard(input);",
+    "type Key = 'a'; type Concrete = Key; type Index<Key> = Record<Concrete, number>; const index: Index<string> = { a: 1 };",
+    "type Key = 'a'; type Index<K = Key> = Record<K, number>; type Wrapped<Key> = Index; const index: Wrapped<string> = { a: 1 };",
+    "type Value = unknown; type Concrete = Value; type Wrapped<Value> = Concrete; function guard(value: unknown): value is User { return true; } declare const input: Wrapped<string>; guard(input);",
   ],
   [
     "function outer() { type Index = Record<string, number>; const index: Index = { a: 1 }; }",
@@ -166,6 +171,8 @@ check(
     "function guard(value: unknown): value is User { return true; } guard({ id: 1 });",
     "const guard = (value: unknown): value is User => true; declare const user: User; guard(user);",
     "function guard(value: unknown): value is User { return true; } function load(): User { return user; } guard(load());",
+    "type Key = string; type Concrete = Key; type Index<Key> = Record<Concrete, number>; const index: Index<'a'> = { a: 1 };",
+    "type Value = { id: string }; type Concrete = Value; type Wrapped<Value> = Concrete; function guard(value: unknown): value is User { return true; } declare const input: Wrapped<unknown>; guard(input);",
   ],
 )
 

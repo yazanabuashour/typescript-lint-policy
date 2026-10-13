@@ -1,5 +1,5 @@
 import type { ESTree, SourceCode, Variable } from "@oxlint/plugins";
-import { type TypeEnvironment } from "./dictionary-types.ts";
+import type { TypeEnvironment } from "./type-environment.ts";
 export type FunctionExpression = ESTree.ArrowFunctionExpression | ESTree.Function;
 export declare function resolveVariable(sourceCode: SourceCode, identifier: ESTree.IdentifierReference): Variable | null;
 export declare function variableDeclarator(variable: Variable): ESTree.VariableDeclarator | null;

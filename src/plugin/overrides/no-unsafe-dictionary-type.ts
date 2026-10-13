@@ -1,11 +1,13 @@
 import type { ESTree } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 import {
-  classifyUnsafeDictionary,
-  classifyUnsafeDictionaryValue,
   createTypeEnvironment,
   type TypeEnvironment,
-} from "../shared/dictionary-types.ts"
+} from "../shared/type-environment.ts"
+import {
+  classifyUnsafeDictionary,
+  classifyUnsafeDictionaryValue,
+} from "../shared/unsafe-dictionary.ts"
 import { visibleTypeAlias } from "../shared/type-alias-resolution.ts"
 
 const typeNodeKinds: ReadonlySet<string> = new Set([

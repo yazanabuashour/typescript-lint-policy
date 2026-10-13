@@ -1,11 +1,13 @@
 import type { Context, ESTree, SourceCode } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
 import {
-  classifyWideningTarget,
   createTypeEnvironment,
   type TypeEnvironment,
+} from "../shared/type-environment.ts"
+import {
+  classifyWideningTarget,
   type WideningTarget,
-} from "../shared/dictionary-types.ts"
+} from "../shared/widening-target.ts"
 import {
   type FunctionExpression,
   hasKnownEvidence,

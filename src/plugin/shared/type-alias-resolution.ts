@@ -27,6 +27,16 @@ export type ResolvedTypeMatcher = (
   matches: (child: ESTree.TSType) => boolean,
 ) => boolean
 
+export type TypeResolver = <Result>(
+  type: ESTree.TSType,
+  visitor: ResolvedTypeVisitor<Result>,
+) => Result
+
+export type ResolvedTypeVisitor<Result> = (
+  type: ESTree.TSType,
+  resolve: TypeResolver,
+) => Result
+
 const environmentsByProgram = new WeakMap<
   ESTree.Program,
   TypeAliasEnvironment
@@ -221,17 +231,18 @@ function aliasSubstitutions(
   return next
 }
 
-/** Match a type after resolving visible aliases and substituting their type parameters. */
-export function resolvedTypeMatches(
+/** Resolve aliases and preserve lexical substitutions when a visitor evaluates child types. */
+export function resolveType<Result>(
   type: ESTree.TSType,
   environment: TypeAliasEnvironment,
-  matcher: ResolvedTypeMatcher,
-): boolean {
-  const evaluate = (
+  visitor: ResolvedTypeVisitor<Result>,
+): Result {
+  const evaluate = <Value>(
     current: ESTree.TSType,
     substitutions: Substitutions,
     resolvingAliases: ReadonlySet<ESTree.TSTypeAliasDeclaration>,
-  ): boolean => {
+    visit: ResolvedTypeVisitor<Value>,
+  ): Value => {
     if (current.type === "TSTypeReference") {
       const name = typeReferenceName(current)
 
@@ -253,6 +264,7 @@ export function resolvedTypeMatches(
             substitution.type,
             substitution.substitutions,
             substitution.resolvingAliases,
+            visit,
           )
         }
 
@@ -275,16 +287,29 @@ export function resolvedTypeMatches(
               alias.typeAnnotation,
               nextSubstitutions,
               nextResolving,
+              visit,
             )
           }
         }
       }
     }
 
-    return matcher(current, (child) =>
-      evaluate(child, substitutions, resolvingAliases),
+    return visit(current, (child, childVisitor) =>
+      evaluate(child, substitutions, resolvingAliases, childVisitor),
     )
   }
 
-  return evaluate(type, new Map(), new Set())
+  return evaluate(type, new Map(), new Set(), visitor)
+}
+
+/** Match a resolved type with the same predicate throughout its children. */
+export function resolvedTypeMatches(
+  type: ESTree.TSType,
+  environment: TypeAliasEnvironment,
+  matcher: ResolvedTypeMatcher,
+): boolean {
+  const visit: ResolvedTypeVisitor<boolean> = (current, resolve) =>
+    matcher(current, (child) => resolve(child, visit))
+
+  return resolveType(type, environment, visit)
 }

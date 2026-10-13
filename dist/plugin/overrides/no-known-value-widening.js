@@ -1,5 +1,6 @@
 import { defineRule } from "@oxlint/plugins";
-import { classifyWideningTarget, createTypeEnvironment, } from "../shared/dictionary-types.js";
+import { createTypeEnvironment, } from "../shared/type-environment.js";
+import { classifyWideningTarget, } from "../shared/widening-target.js";
 import { hasKnownEvidence, knownPredicateArgument, resolveVariable, variableDeclarator, } from "../shared/known-evidence.js";
 function unwrapExpression(expression) {
     let current = expression;

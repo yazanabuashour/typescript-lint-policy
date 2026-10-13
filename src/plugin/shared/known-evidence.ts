@@ -4,11 +4,9 @@ import {
   functionParameterBindingName,
   functionParameterTypeAnnotation,
 } from "../../vendor/anti-slop/src/shared/function-parameters.ts"
-import {
-  classifyUnsafeDictionaryValue,
-  isKnownEvidenceExpression,
-  type TypeEnvironment,
-} from "./dictionary-types.ts"
+import { isKnownEvidenceExpression } from "./expression-evidence.ts"
+import type { TypeEnvironment } from "./type-environment.ts"
+import { classifyUnsafeDictionaryValue } from "./unsafe-dictionary.ts"
 
 export type FunctionExpression =
   | ESTree.ArrowFunctionExpression

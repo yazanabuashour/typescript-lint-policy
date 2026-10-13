@@ -121,9 +121,9 @@ function aliasSubstitutions(alias, reference, base, resolvingAliases) {
     }
     return next;
 }
-/** Match a type after resolving visible aliases and substituting their type parameters. */
-export function resolvedTypeMatches(type, environment, matcher) {
-    const evaluate = (current, substitutions, resolvingAliases) => {
+/** Resolve aliases and preserve lexical substitutions when a visitor evaluates child types. */
+export function resolveType(type, environment, visitor) {
+    const evaluate = (current, substitutions, resolvingAliases, visit) => {
         if (current.type === "TSTypeReference") {
             const name = typeReferenceName(current);
             if (name !== null) {
@@ -133,7 +133,7 @@ export function resolvedTypeMatches(type, environment, matcher) {
                 if (substitution !== undefined &&
                     !current.typeArguments?.params.length) {
                     // Resume the argument's caller context, not the alias body's cycle guard.
-                    return evaluate(substitution.type, substitution.substitutions, substitution.resolvingAliases);
+                    return evaluate(substitution.type, substitution.substitutions, substitution.resolvingAliases, visit);
                 }
                 const alias = declaration?.type === "TSTypeAliasDeclaration" ? declaration : null;
                 if (alias !== null && !resolvingAliases.has(alias)) {
@@ -141,12 +141,17 @@ export function resolvedTypeMatches(type, environment, matcher) {
                     if (nextSubstitutions !== null) {
                         const nextResolving = new Set(resolvingAliases);
                         nextResolving.add(alias);
-                        return evaluate(alias.typeAnnotation, nextSubstitutions, nextResolving);
+                        return evaluate(alias.typeAnnotation, nextSubstitutions, nextResolving, visit);
                     }
                 }
             }
         }
-        return matcher(current, (child) => evaluate(child, substitutions, resolvingAliases));
+        return visit(current, (child, childVisitor) => evaluate(child, substitutions, resolvingAliases, childVisitor));
     };
-    return evaluate(type, new Map(), new Set());
+    return evaluate(type, new Map(), new Set(), visitor);
+}
+/** Match a resolved type with the same predicate throughout its children. */
+export function resolvedTypeMatches(type, environment, matcher) {
+    const visit = (current, resolve) => matcher(current, (child) => resolve(child, visit));
+    return resolveType(type, environment, visit);
 }

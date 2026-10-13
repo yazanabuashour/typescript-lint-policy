@@ -61,8 +61,11 @@ The alias-based rules share `src/plugin/shared/`. Those helpers derive in part
 from anti-slop and remain covered by its notice. The local resolver preserves
 lexical shadowing, declaration-site generic bindings, nested transparent aliases,
 default arguments, and class-expression scope. Importing the pinned upstream
-resolver would lose existing regression protection. Dictionary and widening
-helpers remain split into focused modules under the measured local line limits.
+resolver would lose existing regression protection. Dictionary keys, dictionary
+values, and widening targets use that same resolver: caller arguments cannot
+replace unrelated declaration-site type bindings. Parameter defaults retain their
+alias's declaration context. Classification stays in focused modules under the
+measured local line limits.
 
 `no-unknown-parameters` resolves local aliases in addition to checking direct
 `unknown` syntax. Predicate exemptions apply only to the named predicate subject.

@@ -2,7 +2,7 @@ import type { ESTree } from "@oxlint/plugins"
 import {
   createTypeAliasEnvironment,
   hasVisibleTypeBinding,
-  type TypeAliasEnvironment as LexicalTypeAliasEnvironment,
+  type TypeAliasEnvironment,
 } from "./type-alias-resolution.ts"
 
 export const TRANSPARENT_WRAPPERS = new Set([
@@ -12,14 +12,12 @@ export const TRANSPARENT_WRAPPERS = new Set([
   "NonNullable",
 ])
 
-export type TypeAliasEnvironment = ReadonlyMap<string, ESTree.TSType>
-
 export type TypeEnvironment = {
   readonly interfaces: ReadonlyMap<
     string,
     readonly ESTree.TSInterfaceDeclaration[]
   >
-  readonly typeAliases: LexicalTypeAliasEnvironment
+  readonly typeAliases: TypeAliasEnvironment
 }
 
 export function createTypeEnvironment(
@@ -70,58 +68,4 @@ export function unwrapTransparentType(type: ESTree.TSType): ESTree.TSType {
   }
 
   return current
-}
-
-export function isUnappliedReferenceTo(
-  type: ESTree.TSType,
-  name: string,
-): boolean {
-  const unwrapped = unwrapTransparentType(type)
-
-  return (
-    unwrapped.type === "TSTypeReference" &&
-    typeReferenceName(unwrapped) === name &&
-    !unwrapped.typeArguments?.params.length
-  )
-}
-
-function resolvedSubstitutionArgument(
-  type: ESTree.TSType,
-  base: TypeAliasEnvironment,
-  resolving: ReadonlySet<string> = new Set(),
-): ESTree.TSType {
-  const unwrapped = unwrapTransparentType(type)
-
-  if (unwrapped.type !== "TSTypeReference") return type
-  const name = typeReferenceName(unwrapped)
-
-  if (name === null || resolving.has(name)) return type
-  const substitution = base.get(name)
-
-  if (substitution === undefined) return type
-
-  return resolvedSubstitutionArgument(
-    substitution,
-    base,
-    new Set([...resolving, name]),
-  )
-}
-
-export function aliasSubstitution(
-  alias: ESTree.TSTypeAliasDeclaration,
-  type: ESTree.TSTypeReference,
-  base: TypeAliasEnvironment,
-): TypeAliasEnvironment | null {
-  const parameters = alias.typeParameters?.params ?? []
-  const typeArguments = type.typeArguments?.params ?? []
-  const next = new Map(base)
-
-  for (const [index, parameter] of parameters.entries()) {
-    const argument = typeArguments[index] ?? parameter.default
-
-    if (argument === null || argument === undefined) return null
-    next.set(parameter.name.name, resolvedSubstitutionArgument(argument, next))
-  }
-
-  return next
 }
