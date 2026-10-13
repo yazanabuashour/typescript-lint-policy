@@ -40,6 +40,10 @@ function sourceKeyName(sourceCode, key) {
 function functionName(sourceCode, owner) {
     if (owner === null)
         return "anonymous function";
+    if (owner.type === "TSFunctionType") {
+        const binding = owner.parent.parent;
+        return binding?.type === "Identifier" ? binding.name : "anonymous function";
+    }
     if (owner.id !== null)
         return owner.id.name;
     const parent = owner.parent;

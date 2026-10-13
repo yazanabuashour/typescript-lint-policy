@@ -1,4 +1,5 @@
 import type { ESTree, Variable } from "@oxlint/plugins"
+import type { TypeAliasEnvironment } from "./type-alias-resolution.ts"
 import {
   assertedExpression,
   assertionFromExpression,
@@ -78,6 +79,7 @@ function knownValueEvidence(
   scopes: Scopes,
   boundary: ESTree.Node | null,
   visitedVariables: ReadonlySet<Variable>,
+  environment: TypeAliasEnvironment,
 ): KnownValueEvidence | null {
   const unwrapped = unwrapExpressionParentheses(expression)
 
@@ -85,7 +87,8 @@ function knownValueEvidence(
     unwrapped.type === "TSAsExpression" ||
     unwrapped.type === "TSTypeAssertion"
   ) {
-    if (broadTypeKind(unwrapped.typeAnnotation) !== null) return null
+    if (broadTypeKind(unwrapped.typeAnnotation, environment) !== null)
+      return null
 
     return { type: unwrapped.typeAnnotation }
   }
@@ -121,7 +124,7 @@ function knownValueEvidence(
   if (annotation !== undefined && annotatedIdentifier !== undefined) {
     if (
       functionBoundary(annotatedIdentifier) !== boundary ||
-      broadTypeKind(annotation) !== null
+      broadTypeKind(annotation, environment) !== null
     ) {
       return null
     }
@@ -149,12 +152,14 @@ function knownValueEvidence(
     scopes,
     boundary,
     new Set([...visitedVariables, variable]),
+    environment,
   )
 }
 
 export function widenedBinding(
   variable: Variable,
   scopes: Scopes,
+  environment: TypeAliasEnvironment,
 ): WidenedBinding | null {
   const declarator = variableDeclarator(variable)
 
@@ -178,10 +183,10 @@ export function widenedBinding(
   const initializerBroadKind =
     initializerAssertion === null
       ? null
-      : broadTypeKind(initializerAssertion.typeAnnotation)
+      : broadTypeKind(initializerAssertion.typeAnnotation, environment)
 
   const declaredBroadKind =
-    declaredType === undefined ? null : broadTypeKind(declaredType)
+    declaredType === undefined ? null : broadTypeKind(declaredType, environment)
 
   const broadKind = declaredBroadKind ?? initializerBroadKind
 
@@ -197,6 +202,7 @@ export function widenedBinding(
     scopes,
     boundary,
     new Set([variable]),
+    environment,
   )
 
   return evidence === null

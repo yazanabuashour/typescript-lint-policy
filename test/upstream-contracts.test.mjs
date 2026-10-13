@@ -61,6 +61,7 @@ check(
     "type Input = object; const Constructor = class Input { consume(value: Input) {} };",
     "type Input = object; function outer() { class Input {} function consume(value: Input) {} }",
     "type Loop<T> = Loop<T>; function consume(value: Loop<object>) {}",
+    "type Input = object; namespace Owner { export interface Input { id: number } } export namespace Api { import Input = Owner.Input; export function consume(value: Input) {} }",
   ],
   [
     "function outer() { function consume(value: Alias) {} type Alias = object; }",
@@ -71,6 +72,7 @@ check(
     "type Identity<T> = T; type Wrapped<T, U = Identity<T>> = U; function consume(value: Wrapped<object>) {}",
     "function outer<T>() { { type T = object; type Wrapped<U> = T; function consume(value: Wrapped<string>) {} } }",
     "type Input = object; const Constructor = class Input {}; function consume(value: Input) {}",
+    "type Input = object; type F<T> = T extends { field: string extends infer Input ? Input : never } ? (value: Input) => void : never;",
   ],
 )
 
@@ -106,6 +108,8 @@ check(
     "type Value = unknown; function load<Value>(): Value { return input; }",
     "type Value = unknown; function outer() { type Value = User; function load(): Value { return input; } }",
     "type T = string; type Concrete = T; type Wrapped<T> = Concrete; function load(): Wrapped<unknown> { return input; }",
+    "interface Promise<T> { value: T } function load(): Promise<unknown> { return { value: 1 }; }",
+    "interface PromiseLike<T> { value: T } function load(): PromiseLike<unknown> { return { value: 1 }; }",
   ],
   [
     "function outer() { function load(): Value { return input; } type Value = unknown; }",
@@ -164,6 +168,9 @@ check(
     "type Key = 'a'; type Concrete = Key; type Index<Key> = Record<Concrete, number>; const index: Index<string> = { a: 1 };",
     "type Key = 'a'; type Index<K = Key> = Record<K, number>; type Wrapped<Key> = Index; const index: Wrapped<string> = { a: 1 };",
     "type Value = unknown; type Concrete = Value; type Wrapped<Value> = Concrete; function guard(value: unknown): value is User { return true; } declare const input: Wrapped<string>; guard(input);",
+    "interface User { id: number } const guard: (value: User) => value is User = (value: unknown): value is User => true; guard({ id: 1 });",
+    "interface User { id: number } const load: () => unknown = (): User => ({ id: 1 }); function guard(value: unknown): value is User { return true; } guard(load());",
+    "const identity: <T>(value: T) => T = value => value; declare const input: unknown; function isString(value: unknown): value is string { return true; } isString(identity(input));",
   ],
   [
     "function outer() { type Index = Record<string, number>; const index: Index = { a: 1 }; }",
@@ -174,6 +181,8 @@ check(
     "function guard(value: unknown): value is User { return true; } function load(): User { return user; } guard(load());",
     "type Key = string; type Concrete = Key; type Index<Key> = Record<Concrete, number>; const index: Index<'a'> = { a: 1 };",
     "type Value = { id: string }; type Concrete = Value; type Wrapped<Value> = Concrete; function guard(value: unknown): value is User { return true; } declare const input: Wrapped<unknown>; guard(input);",
+    "interface User { id: number } const guard: (value: unknown) => value is User = (value: unknown): value is User => true; guard({ id: 1 });",
+    "interface User { id: number } const load: <T>(value: T) => User = value => ({ id: 1 }); function guard(value: unknown): value is User { return true; } guard(load('input'));",
   ],
 )
 
@@ -183,9 +192,14 @@ check(
   [
     "declare const input: unknown; const user = input as User;",
     "const known = { id: 1 }; let widened: unknown = known; widened = input; const user = widened as User;",
+    "type User = { id: number }; type Record<K, V> = User; const known: User = { id: 1 }; const widened: Record<string, unknown> = known; const user = widened as User;",
+    "type User = { id: number }; type Readonly<T> = User; const known: User = { id: 1 }; const widened: Readonly<Record<string, unknown>> = known; const user = widened as User;",
+    "type PropertyKey = 'id'; const known = { id: 1 }; const widened: Record<PropertyKey, unknown> = known; const user = widened as { id: number };",
+    "type User = { id: number }; const known: User = { id: 1 }; const widened: object = known; { type User = unknown; const user = widened as User; }",
   ],
   [
     "const known = { id: 1 }; const widened: unknown = known; const user = widened as User;",
+    "type User = { id: number }; const known: User = { id: 1 }; const widened: Record<string, unknown> = known; const user = widened as User;",
   ],
 )
 

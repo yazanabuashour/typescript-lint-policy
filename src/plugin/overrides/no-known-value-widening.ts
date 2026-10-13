@@ -10,6 +10,7 @@ import {
 } from "../shared/widening-target.ts"
 import {
   type FunctionExpression,
+  type FunctionSignature,
   hasKnownEvidence,
   knownPredicateArgument,
   resolveVariable,
@@ -73,9 +74,15 @@ function sourceKeyName(
 
 function functionName(
   sourceCode: SourceCode,
-  owner: FunctionExpression | null,
+  owner: FunctionSignature | null,
 ): string {
   if (owner === null) return "anonymous function"
+
+  if (owner.type === "TSFunctionType") {
+    const binding = owner.parent.parent
+
+    return binding?.type === "Identifier" ? binding.name : "anonymous function"
+  }
 
   if (owner.id !== null) return owner.id.name
   const parent = owner.parent

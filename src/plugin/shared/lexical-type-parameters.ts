@@ -7,6 +7,8 @@ function inferTypeParameter(
   node: ESTree.Node,
   visitorKeys: VisitorKeys,
 ): ESTree.TSTypeParameter | null {
+  if (node.type === "TSConditionalType") return null
+
   if (node.type === "TSInferType" && node.typeParameter.name.name === name)
     return node.typeParameter
 

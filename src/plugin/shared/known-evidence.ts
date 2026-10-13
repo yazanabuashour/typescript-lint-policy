@@ -5,12 +5,16 @@ import {
   functionParameterTypeAnnotation,
 } from "../../vendor/anti-slop/src/shared/function-parameters.ts"
 import { isKnownEvidenceExpression } from "./expression-evidence.ts"
+import { childNodes } from "./ast.ts"
+import { visibleTypeDeclaration } from "./type-alias-resolution.ts"
 import type { TypeEnvironment } from "./type-environment.ts"
 import { classifyUnsafeDictionaryValue } from "./unsafe-dictionary.ts"
 
 export type FunctionExpression =
   | ESTree.ArrowFunctionExpression
   | ESTree.Function
+
+export type FunctionSignature = FunctionExpression | ESTree.TSFunctionType
 
 function unwrapExpression(expression: ESTree.Expression): ESTree.Expression {
   let current = expression
@@ -109,7 +113,7 @@ function isFunctionExpression(node: ESTree.Node): node is FunctionExpression {
 export function localFunctionForCall(
   sourceCode: SourceCode,
   callee: ESTree.Expression,
-): FunctionExpression | null {
+): FunctionSignature | null {
   const unwrapped = unwrapExpression(callee)
 
   if (isFunctionExpression(unwrapped)) return unwrapped
@@ -129,14 +133,20 @@ export function localFunctionForCall(
     return definition.node
   }
 
-  if (
-    definition.type !== "Variable" ||
-    definition.node.type !== "VariableDeclarator"
-  ) {
-    return null
+  const declarator = variableDeclarator(variable)
+
+  if (declarator === null) return null
+
+  const annotation =
+    declarator.id.type === "Identifier"
+      ? declarator.id.typeAnnotation?.typeAnnotation
+      : undefined
+
+  if (annotation !== undefined) {
+    return annotation.type === "TSFunctionType" ? annotation : null
   }
 
-  const initializer = definition.node.init
+  const initializer = declarator.init
 
   if (initializer === null) return null
   const unwrappedInitializer = unwrapExpression(initializer)
@@ -150,21 +160,16 @@ function variableTypeAnnotation(
   sourceCode: SourceCode,
   variable: Variable,
 ): ESTree.TSTypeAnnotation | null {
+  const declarator = variableDeclarator(variable)
+
+  if (declarator?.id.type === "Identifier")
+    return declarator.id.typeAnnotation ?? null
+
   if (variable.defs.length !== 1) return null
   const [definition] = variable.defs
 
-  if (definition === undefined) return null
-
   if (
-    definition.type === "Variable" &&
-    definition.node.type === "VariableDeclarator" &&
-    definition.node.id.type === "Identifier"
-  ) {
-    return definition.node.id.typeAnnotation ?? null
-  }
-
-  if (
-    definition.type !== "Parameter" ||
+    definition?.type !== "Parameter" ||
     !isFunctionExpression(definition.node)
   ) {
     return null
@@ -185,6 +190,43 @@ function hasInformativeType(
   environment: TypeEnvironment,
 ): boolean {
   return classifyUnsafeDictionaryValue(type, environment) === null
+}
+
+function hasUnresolvedGenericReturn(
+  owner: FunctionSignature,
+  environment: TypeEnvironment,
+): boolean {
+  const parameters = owner.typeParameters?.params ?? []
+
+  if (parameters.length === 0) return false
+
+  const nodes: ESTree.Node[] =
+    owner.returnType == null ? [] : [owner.returnType]
+
+  while (nodes.length > 0) {
+    const node = nodes.pop()
+
+    if (node === undefined) break
+
+    if (node.type === "TSTypeQuery") return true
+
+    if (
+      node.type === "TSTypeReference" &&
+      node.typeName.type === "Identifier"
+    ) {
+      const declaration = visibleTypeDeclaration(
+        node.typeName.name,
+        node,
+        environment.typeAliases,
+      )
+
+      if (parameters.some((parameter) => parameter === declaration)) return true
+    }
+
+    nodes.push(...childNodes(node, environment.typeAliases.visitorKeys))
+  }
+
+  return false
 }
 
 export function hasKnownCallArgumentEvidence(
@@ -226,7 +268,10 @@ export function hasKnownCallArgumentEvidence(
     const returnType = owner?.returnType?.typeAnnotation
 
     return (
-      returnType !== undefined && hasInformativeType(returnType, environment)
+      owner !== null &&
+      returnType !== undefined &&
+      !hasUnresolvedGenericReturn(owner, environment) &&
+      hasInformativeType(returnType, environment)
     )
   }
 
@@ -263,7 +308,7 @@ export function hasKnownCallArgumentEvidence(
 
 function typePredicateSubjectIndex(
   sourceCode: SourceCode,
-  owner: FunctionExpression,
+  owner: FunctionSignature,
 ): number | null {
   const predicate = owner.returnType?.typeAnnotation
 

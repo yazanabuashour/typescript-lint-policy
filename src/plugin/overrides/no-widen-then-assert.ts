@@ -1,5 +1,6 @@
 import type { ESTree } from "@oxlint/plugins"
 import { defineRule } from "@oxlint/plugins"
+import { createTypeAliasEnvironment } from "../shared/type-alias-resolution.ts"
 import {
   functionBoundary,
   resolvedVariableForIdentifier,
@@ -26,6 +27,11 @@ export const noWidenThenAssertRule = defineRule({
   create(context) {
     const scopes = context.sourceCode.scopeManager.scopes
 
+    const environment = createTypeAliasEnvironment(
+      context.sourceCode.ast,
+      context.sourceCode.visitorKeys,
+    )
+
     const checkAssertion = (
       node: ESTree.TSAsExpression | ESTree.TSTypeAssertion,
     ) => {
@@ -36,7 +42,7 @@ export const noWidenThenAssertRule = defineRule({
       const variable = resolvedVariableForIdentifier(scopes, expression)
 
       if (variable === null) return
-      const widened = widenedBinding(variable, scopes)
+      const widened = widenedBinding(variable, scopes, environment)
 
       if (
         widened === null ||
@@ -47,6 +53,7 @@ export const noWidenThenAssertRule = defineRule({
           widened.broadKind,
           widened.evidence,
           node.typeAnnotation,
+          environment,
         )
       ) {
         return

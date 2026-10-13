@@ -70,6 +70,7 @@ function declaredTypeBinding(node: ESTree.Node): {
     node.type === "TSTypeAliasDeclaration" ||
     node.type === "TSInterfaceDeclaration" ||
     node.type === "TSEnumDeclaration" ||
+    node.type === "TSImportEqualsDeclaration" ||
     node.type === "ClassDeclaration" ||
     node.type === "ClassExpression"
   ) {

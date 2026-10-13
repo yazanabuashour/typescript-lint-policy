@@ -19,6 +19,7 @@ function declaredTypeBinding(node) {
     if (node.type === "TSTypeAliasDeclaration" ||
         node.type === "TSInterfaceDeclaration" ||
         node.type === "TSEnumDeclaration" ||
+        node.type === "TSImportEqualsDeclaration" ||
         node.type === "ClassDeclaration" ||
         node.type === "ClassExpression") {
         return node.id === null ? null : { declaration: node, name: node.id.name };
