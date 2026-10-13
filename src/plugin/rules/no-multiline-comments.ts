@@ -38,7 +38,12 @@ function exportedDocs(sourceCode: SourceCode): Set<Comment> {
 
     const declaration = statement.declaration
 
-    if (!declaration || !declaration.type.endsWith("Declaration")) return
+    if (
+      !declaration ||
+      (!declaration.type.endsWith("Declaration") &&
+        declaration.type !== "TSDeclareFunction")
+    )
+      return
     addDoc(statement)
     addDoc(declaration)
 

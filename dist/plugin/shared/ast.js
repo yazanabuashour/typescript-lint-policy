@@ -24,6 +24,7 @@ function isExpressionWrapper(node) {
         node.type === "ParenthesizedExpression" ||
         node.type === "TSNonNullExpression" ||
         node.type === "TSAsExpression" ||
+        node.type === "TSSatisfiesExpression" ||
         node.type === "TSTypeAssertion");
 }
 export function unwrapExpression(node) {
@@ -48,7 +49,7 @@ export function getPropertyName(expression) {
 /** Resolve public dot properties and string-literal computed properties, not variable keys. */
 export function getMemberPropertyName(member) {
     if (member.computed)
-        return literalStringValue(member.property);
+        return literalStringValue(unwrapExpression(member.property));
     return member.property.type === "Identifier" ? member.property.name : null;
 }
 export function isIdentifier(node, name) {

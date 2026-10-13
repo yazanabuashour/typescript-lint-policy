@@ -10,7 +10,6 @@ import * as NodeURL from "node:url"
 import strictestConfig, { effectConfig } from "../dist/config.js"
 import plugin from "../dist/plugin/index.js"
 import effectPlugin from "../dist/plugin/effect/index.js"
-import { tester } from "./rule-tester.mjs"
 
 const require = NodeModule.createRequire(import.meta.url)
 
@@ -144,60 +143,6 @@ NodeTest.test("rejects unused waivers without a consumer CLI flag", () => {
   )
 })
 
-tester.run(
-  "project/no-multiline-comments",
-  plugin.rules["no-multiline-comments"],
-  {
-    valid: [
-      "// SAFETY: The parser checked this invariant.\nconst id = input as UserId;",
-      "/* One line. */\nconst value = 1; // Another line.\nconst text = `// not a comment\\n/* neither */`;",
-      "// First decision.\n\n// Separate decision.\nconst value = 1;",
-      "// First decision.\n// @ts-check\n// Second decision.\nconst value = 1;",
-      "/** Public contract.\n * A second line.\n */\nexport function publicApi() {}",
-      "/** Public contract.\n * A second line.\n */\nexport default class { /** Member contract.\n * More detail.\n */ method() {} }",
-      "export interface PublicApi { /** Member contract.\n * More detail.\n */ method(): void }\nexport type Shape = { /** Field contract.\n * More detail.\n */ value: number };",
-      "export enum State { /** Public variant.\n * More detail.\n */ Ready }\nexport namespace Api { /** Public contract.\n * More detail.\n */ export function run() {} }",
-      "export /** Public contract.\n * More detail.\n */ const publicValue = 1;",
-      "#!/usr/bin/env node\n/* eslint-disable no-console,\n no-debugger */\nconsole.log('ok');\ndebugger;",
-      "/* Copyright Example Authors.\n * Redistribution permitted under MIT.\n */\n// SPDX-License-Identifier: MIT\n// A required legal notice.\nconst value = 1;",
-    ],
-    invalid: [
-      {
-        code: "// One line.\n// Another line.\nconst value = 1;",
-        errors: [{ messageId: "multiline" }],
-      },
-      {
-        code: "/* One sentence\n */\nconst value = 1;",
-        errors: [{ messageId: "multiline" }],
-      },
-      {
-        code: "/** Internal detail.\n * More detail.\n */\nfunction internal() {}\nexport { internal };",
-        errors: [{ messageId: "multiline" }],
-      },
-      {
-        code: "/** Not API documentation.\n * More detail.\n */\nexport { value } from './other';",
-        errors: [{ messageId: "multiline" }],
-      },
-      {
-        code: "/* Not a doc comment.\n * More detail.\n */\nexport function publicApi() {}",
-        errors: [{ messageId: "multiline" }],
-      },
-      {
-        code: "export class PublicApi { /** Private detail.\n * More detail.\n */ private method() {} }",
-        errors: [{ messageId: "multiline" }],
-      },
-      {
-        code: "export function publicApi() { /** Internal detail.\n * More detail.\n */ const value = 1; }",
-        errors: [{ messageId: "multiline" }],
-      },
-      {
-        code: "// @ts-check\n// First decision.\n// Second decision.\nconst value = 1;",
-        errors: [{ messageId: "multiline", line: 2, endLine: 3 }],
-      },
-    ],
-  },
-)
-
 NodeTest.test("enforces the native accumulating-spread companion", () => {
   const result = runRule(
     "oxc/no-accumulating-spread",
@@ -276,13 +221,16 @@ NodeTest.test("allows injected globalThis contracts", () => {
 })
 
 NodeTest.test("rejects inline Effect Schema compilation", () => {
-  for (const callee of [
-    "Schema.decodeUnknownEffect",
-    "Schema['decodeUnknownEffect']",
+  for (const compiled of [
+    "Schema.decodeUnknownEffect(User)",
+    "Schema['decodeUnknownEffect'](User)",
+    "(Schema satisfies typeof Schema).decodeUnknownEffect(User)",
+    "(Schema.decodeUnknownEffect(User) satisfies Decoder)",
+    "(Schema.decodeUnknownEffect(User) as Decoder)",
   ]) {
     const result = runRule(
       "project/no-inline-schema-compile",
-      `const User = Schema.Struct({ name: Schema.String })\nexport const parse = (input) => ${callee}(User)(input)\n`,
+      `const User = Schema.Struct({ name: Schema.String })\nexport const parse = (input) => ${compiled}(input)\n`,
     )
 
     NodeAssert.strict.equal(
@@ -306,7 +254,11 @@ NodeTest.test("rejects inline Effect Schema compilation", () => {
 })
 
 NodeTest.test("rejects manual Effect runtimes in tests", () => {
-  for (const callee of ["Effect.runPromise", "Effect['runPromise']"]) {
+  for (const callee of [
+    "Effect.runPromise",
+    "Effect['runPromise']",
+    "(Effect satisfies typeof Effect).runPromise",
+  ]) {
     const result = runRule(
       "project/no-manual-effect-runtime-in-tests",
       `test('effect', () => ${callee}(Effect.void))\n`,

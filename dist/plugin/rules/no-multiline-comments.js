@@ -18,7 +18,9 @@ function exportedDocs(sourceCode) {
             statement.type !== "ExportDefaultDeclaration")
             return;
         const declaration = statement.declaration;
-        if (!declaration || !declaration.type.endsWith("Declaration"))
+        if (!declaration ||
+            (!declaration.type.endsWith("Declaration") &&
+                declaration.type !== "TSDeclareFunction"))
             return;
         addDoc(statement);
         addDoc(declaration);

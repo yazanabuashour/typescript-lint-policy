@@ -66,12 +66,12 @@ function isNestedStaticSchemaCall(node) {
     return true;
 }
 function isImmediatelyInvoked(node) {
-    const expression = unwrapExpression(node);
-    if (expression === null || !("parent" in expression))
-        return false;
-    const parent = unwrapExpression(expression.parent);
+    let parent = node.parent;
+    while (parent !== null && unwrapExpression(parent) === node) {
+        parent = parent.parent;
+    }
     return (parent?.type === "CallExpression" &&
-        unwrapExpression(parent.callee) === expression);
+        unwrapExpression(parent.callee) === node);
 }
 export const noInlineSchemaCompileRule = defineRule({
     meta: {

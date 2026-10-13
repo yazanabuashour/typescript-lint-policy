@@ -5,6 +5,7 @@ type ExpressionWrapper =
   | ESTree.ParenthesizedExpression
   | ESTree.TSNonNullExpression
   | ESTree.TSAsExpression
+  | ESTree.TSSatisfiesExpression
   | ESTree.TSTypeAssertion
 
 export type AstNode = ESTree.Node
@@ -43,6 +44,7 @@ function isExpressionWrapper(node: AstNode): node is ExpressionWrapper {
     node.type === "ParenthesizedExpression" ||
     node.type === "TSNonNullExpression" ||
     node.type === "TSAsExpression" ||
+    node.type === "TSSatisfiesExpression" ||
     node.type === "TSTypeAssertion"
   )
 }
@@ -82,7 +84,8 @@ export function getPropertyName(
 export function getMemberPropertyName(
   member: ESTree.MemberExpression,
 ): string | null {
-  if (member.computed) return literalStringValue(member.property)
+  if (member.computed)
+    return literalStringValue(unwrapExpression(member.property))
 
   return member.property.type === "Identifier" ? member.property.name : null
 }

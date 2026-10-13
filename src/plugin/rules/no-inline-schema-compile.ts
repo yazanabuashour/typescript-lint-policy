@@ -95,14 +95,15 @@ function isNestedStaticSchemaCall(
 }
 
 function isImmediatelyInvoked(node: ESTree.CallExpression): boolean {
-  const expression = unwrapExpression(node)
+  let parent: ESTree.Node | null = node.parent
 
-  if (expression === null || !("parent" in expression)) return false
-  const parent = unwrapExpression(expression.parent)
+  while (parent !== null && unwrapExpression(parent) === node) {
+    parent = parent.parent
+  }
 
   return (
     parent?.type === "CallExpression" &&
-    unwrapExpression(parent.callee) === expression
+    unwrapExpression(parent.callee) === node
   )
 }
 
