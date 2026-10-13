@@ -1,7 +1,7 @@
 import { defineRule, type ESTree } from "@oxlint/plugins"
 
 import {
-  getPropertyName,
+  getMemberPropertyName,
   isIdentifier,
   unwrapExpression,
 } from "../shared/ast.ts"
@@ -44,7 +44,7 @@ function schemaCompilerMethod(
 
   if (!isIdentifier(unwrapExpression(expression.object), "Schema")) return null
 
-  const method = getPropertyName(expression.property)
+  const method = getMemberPropertyName(expression)
 
   return method !== null && COMPILER_METHODS.has(method) ? method : null
 }
@@ -78,7 +78,11 @@ function isNestedStaticSchemaCall(
 
   if (!isIdentifier(unwrapExpression(callee.object), "Schema")) return false
 
-  if (getPropertyName(callee.property) === "fromJsonString") {
+  const method = getMemberPropertyName(callee)
+
+  if (method === null) return false
+
+  if (method === "fromJsonString") {
     const [firstArgument] = expression.arguments
 
     return (

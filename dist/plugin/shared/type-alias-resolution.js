@@ -87,10 +87,14 @@ function nearestTypeBindings(name, use, environment) {
     }
     return nearest;
 }
+/** Resolve a unique visible type declaration, respecting lexical shadowing. */
+export function visibleTypeDeclaration(name, use, environment) {
+    const bindings = nearestTypeBindings(name, use, environment);
+    return bindings.length === 1 ? (bindings[0]?.declaration ?? null) : null;
+}
 /** Resolve the nearest visible alias with this name, respecting lexical shadowing. */
 export function visibleTypeAlias(name, use, environment) {
-    const bindings = nearestTypeBindings(name, use, environment);
-    const declaration = bindings.length === 1 ? bindings[0]?.declaration : null;
+    const declaration = visibleTypeDeclaration(name, use, environment);
     return declaration?.type === "TSTypeAliasDeclaration" ? declaration : null;
 }
 /** Return whether a local declaration shadows a built-in type at this use. */
@@ -127,8 +131,7 @@ export function resolveType(type, environment, visitor) {
         if (current.type === "TSTypeReference") {
             const name = typeReferenceName(current);
             if (name !== null) {
-                const bindings = nearestTypeBindings(name, current, environment);
-                const declaration = bindings.length === 1 ? bindings[0]?.declaration : null;
+                const declaration = visibleTypeDeclaration(name, current, environment);
                 const substitution = declaration == null ? undefined : substitutions.get(declaration);
                 if (substitution !== undefined &&
                     !current.typeArguments?.params.length) {

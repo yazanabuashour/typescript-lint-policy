@@ -45,6 +45,12 @@ export function getPropertyName(expression) {
     }
     return null;
 }
+/** Resolve public dot properties and string-literal computed properties, not variable keys. */
+export function getMemberPropertyName(member) {
+    if (member.computed)
+        return literalStringValue(member.property);
+    return member.property.type === "Identifier" ? member.property.name : null;
+}
 export function isIdentifier(node, name) {
     return (node?.type === "Identifier" && (name === undefined || node.name === name));
 }

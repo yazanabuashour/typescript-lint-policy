@@ -8,6 +8,7 @@ import {
 } from "@oxlint/plugins"
 
 import {
+  getMemberPropertyName,
   getPropertyName,
   literalStringValue,
   unwrapExpression,
@@ -104,7 +105,7 @@ function isGlobalProcessObject(
 
   return (
     isUnshadowedGlobal(sourceCode, expression.object, "globalThis") &&
-    getPropertyName(expression.property) === "process"
+    getMemberPropertyName(expression) === "process"
   )
 }
 
@@ -201,7 +202,7 @@ export const noGlobalProcessRuntimeRule = defineRule({
 
       if (variable === null || !nodeOsNamespaces.has(variable)) return null
 
-      const property = getPropertyName(expression.property)
+      const property = getMemberPropertyName(expression)
 
       return property !== null && RUNTIME_PROPERTIES.has(property)
         ? property
@@ -212,7 +213,7 @@ export const noGlobalProcessRuntimeRule = defineRule({
       ImportDeclaration: trackImportDeclaration,
       MemberExpression(node) {
         if (isAllowedFile(context.filename, context.cwd, allowed)) return
-        const property = getPropertyName(node.property)
+        const property = getMemberPropertyName(node)
 
         if (property === null || !RUNTIME_PROPERTIES.has(property)) return
 

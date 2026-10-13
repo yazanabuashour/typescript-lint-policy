@@ -2,6 +2,7 @@ import type { ESTree } from "@oxlint/plugins"
 import {
   resolveType,
   type ResolvedTypeVisitor,
+  visibleTypeDeclaration,
 } from "./type-alias-resolution.ts"
 import {
   isBuiltIn,
@@ -106,6 +107,8 @@ function unsafeValueVisitor(
     const declarations = environment.interfaces.get(name)
 
     return declarations !== undefined &&
+      declarations[0] ===
+        visibleTypeDeclaration(name, unwrapped, environment.typeAliases) &&
       isEffectivelyEmptyInterface(declarations)
       ? "empty-object"
       : null

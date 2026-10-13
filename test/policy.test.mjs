@@ -99,22 +99,15 @@ NodeTest.test(
     }
 
     NodeAssert.strict.ok(strictestConfig.plugins?.includes("jsx-a11y"))
-    NodeAssert.strict.equal(
-      strictestConfig.rules?.["react/exhaustive-deps"],
-      "error",
-    )
-    NodeAssert.strict.equal(
-      strictestConfig.rules?.["react/rules-of-hooks"],
-      "error",
-    )
-    NodeAssert.strict.equal(
-      strictestConfig.rules?.["typescript/no-explicit-any"],
-      "error",
-    )
-    NodeAssert.strict.equal(
-      strictestConfig.rules?.["typescript/no-non-null-assertion"],
-      "error",
-    )
+
+    for (const name of [
+      "react/exhaustive-deps",
+      "react/rules-of-hooks",
+      "typescript/no-explicit-any",
+      "typescript/no-non-null-assertion",
+    ]) {
+      NodeAssert.strict.equal(strictestConfig.rules[name], "error", name)
+    }
   },
 )
 
@@ -283,25 +276,63 @@ NodeTest.test("allows injected globalThis contracts", () => {
 })
 
 NodeTest.test("rejects inline Effect Schema compilation", () => {
-  const result = runRule(
+  for (const callee of [
+    "Schema.decodeUnknownEffect",
+    "Schema['decodeUnknownEffect']",
+  ]) {
+    const result = runRule(
+      "project/no-inline-schema-compile",
+      `const User = Schema.Struct({ name: Schema.String })\nexport const parse = (input) => ${callee}(User)(input)\n`,
+    )
+
+    NodeAssert.strict.equal(
+      result.status,
+      1,
+      `${result.stdout}${result.stderr}`,
+    )
+    NodeAssert.strict.match(`${result.stdout}${result.stderr}`, /Hoist Schema/u)
+  }
+
+  const computed = runRule(
     "project/no-inline-schema-compile",
-    "const User = Schema.Struct({ name: Schema.String })\nexport const parse = (input) => Schema.decodeUnknownEffect(User)(input)\n",
+    "const Schema = { wrap: schema => input => ({ schema, input }) }; const User = {}; const decodeSync = 'wrap'; export const parse = input => Schema[decodeSync](User)(input); export const parseNested = (input, factory) => Schema.decodeUnknownEffect(Schema[factory](input))(input);",
   )
 
-  NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
-  NodeAssert.strict.match(`${result.stdout}${result.stderr}`, /Hoist Schema/u)
+  NodeAssert.strict.equal(
+    computed.status,
+    0,
+    `${computed.stdout}${computed.stderr}`,
+  )
 })
 
 NodeTest.test("rejects manual Effect runtimes in tests", () => {
-  const result = runRule(
+  for (const callee of ["Effect.runPromise", "Effect['runPromise']"]) {
+    const result = runRule(
+      "project/no-manual-effect-runtime-in-tests",
+      `test('effect', () => ${callee}(Effect.void))\n`,
+      "fixture.test.ts",
+    )
+
+    NodeAssert.strict.equal(
+      result.status,
+      1,
+      `${result.stdout}${result.stderr}`,
+    )
+    NodeAssert.strict.match(
+      `${result.stdout}${result.stderr}`,
+      /@effect\/vitest/u,
+    )
+  }
+
+  const computed = runRule(
     "project/no-manual-effect-runtime-in-tests",
-    "test('effect', () => Effect.runPromise(Effect.void))\n",
+    "const runPromise = 'map'; test('effect', () => Effect[runPromise](Effect.void, value => value));",
     "fixture.test.ts",
   )
 
-  NodeAssert.strict.equal(result.status, 1, `${result.stdout}${result.stderr}`)
-  NodeAssert.strict.match(
-    `${result.stdout}${result.stderr}`,
-    /@effect\/vitest/u,
+  NodeAssert.strict.equal(
+    computed.status,
+    0,
+    `${computed.stdout}${computed.stderr}`,
   )
 })

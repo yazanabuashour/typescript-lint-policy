@@ -1,7 +1,7 @@
 import { defineRule, type ESTree } from "@oxlint/plugins"
 
 import {
-  getPropertyName,
+  getMemberPropertyName,
   isIdentifier,
   unwrapExpression,
 } from "../shared/ast.ts"
@@ -31,7 +31,7 @@ function manualRunnerName(
   if (expression?.type !== "MemberExpression") return null
 
   const object = unwrapExpression(expression.object)
-  const property = getPropertyName(expression.property)
+  const property = getMemberPropertyName(expression)
 
   if (property === null) return null
 

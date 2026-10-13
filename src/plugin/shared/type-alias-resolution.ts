@@ -176,14 +176,24 @@ function nearestTypeBindings(
   return nearest
 }
 
+/** Resolve a unique visible type declaration, respecting lexical shadowing. */
+export function visibleTypeDeclaration(
+  name: string,
+  use: ESTree.Node,
+  environment: TypeAliasEnvironment,
+): ESTree.Node | null {
+  const bindings = nearestTypeBindings(name, use, environment)
+
+  return bindings.length === 1 ? (bindings[0]?.declaration ?? null) : null
+}
+
 /** Resolve the nearest visible alias with this name, respecting lexical shadowing. */
 export function visibleTypeAlias(
   name: string,
   use: ESTree.Node,
   environment: TypeAliasEnvironment,
 ): ESTree.TSTypeAliasDeclaration | null {
-  const bindings = nearestTypeBindings(name, use, environment)
-  const declaration = bindings.length === 1 ? bindings[0]?.declaration : null
+  const declaration = visibleTypeDeclaration(name, use, environment)
 
   return declaration?.type === "TSTypeAliasDeclaration" ? declaration : null
 }
@@ -247,10 +257,7 @@ export function resolveType<Result>(
       const name = typeReferenceName(current)
 
       if (name !== null) {
-        const bindings = nearestTypeBindings(name, current, environment)
-
-        const declaration =
-          bindings.length === 1 ? bindings[0]?.declaration : null
+        const declaration = visibleTypeDeclaration(name, current, environment)
 
         const substitution =
           declaration == null ? undefined : substitutions.get(declaration)

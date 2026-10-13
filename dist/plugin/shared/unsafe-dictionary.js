@@ -1,4 +1,4 @@
-import { resolveType, } from "./type-alias-resolution.js";
+import { resolveType, visibleTypeDeclaration, } from "./type-alias-resolution.js";
 import { isBuiltIn, TRANSPARENT_WRAPPERS, typeReferenceName, unwrapTransparentType, } from "./type-environment.js";
 function isNeverType(type) {
     return unwrapTransparentType(type).type === "TSNeverKeyword";
@@ -62,6 +62,8 @@ function unsafeValueVisitor(environment) {
         }
         const declarations = environment.interfaces.get(name);
         return declarations !== undefined &&
+            declarations[0] ===
+                visibleTypeDeclaration(name, unwrapped, environment.typeAliases) &&
             isEffectivelyEmptyInterface(declarations)
             ? "empty-object"
             : null;

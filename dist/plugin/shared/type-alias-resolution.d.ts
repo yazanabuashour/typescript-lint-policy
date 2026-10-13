@@ -14,6 +14,8 @@ export type TypeResolver = <Result>(type: ESTree.TSType, visitor: ResolvedTypeVi
 export type ResolvedTypeVisitor<Result> = (type: ESTree.TSType, resolve: TypeResolver) => Result;
 /** Collect every lexical type alias and competing type binding in a program. */
 export declare function createTypeAliasEnvironment(program: ESTree.Program, visitorKeys: VisitorKeys): TypeAliasEnvironment;
+/** Resolve a unique visible type declaration, respecting lexical shadowing. */
+export declare function visibleTypeDeclaration(name: string, use: ESTree.Node, environment: TypeAliasEnvironment): ESTree.Node | null;
 /** Resolve the nearest visible alias with this name, respecting lexical shadowing. */
 export declare function visibleTypeAlias(name: string, use: ESTree.Node, environment: TypeAliasEnvironment): ESTree.TSTypeAliasDeclaration | null;
 /** Return whether a local declaration shadows a built-in type at this use. */

@@ -12,8 +12,28 @@ tester.run(
       'import type * as NodeOS from "node:os"; NodeOS.platform();',
       'import type { platform } from "node:os"; platform();',
       'import { type arch } from "os"; arch();',
+      'const platform = "env"; process[platform];',
+      'import * as NodeOS from "node:os"; const arch = "homedir"; NodeOS[arch]();',
+      'const process = "host"; globalThis[process].arch;',
     ],
     invalid: [
+      {
+        code: 'process["platform"]; globalThis["process"]["arch"]; import * as NodeOS from "node:os"; NodeOS["platform"]();',
+        errors: [
+          {
+            message:
+              "Inject a project-owned host platform contract instead of reading process.platform directly.",
+          },
+          {
+            message:
+              "Inject a project-owned host arch contract instead of reading process.arch directly.",
+          },
+          {
+            message:
+              "Inject a project-owned host platform contract instead of reading process.platform directly.",
+          },
+        ],
+      },
       {
         code: 'import * as NodeOS from "node:os"; function read(NodeOS) { return NodeOS.platform(); } NodeOS.platform();',
         errors: [

@@ -141,6 +141,7 @@ check(
     "type Wrapped<T> = { value: T }; type Safe = Record<string, Wrapped<unknown>>;",
     "interface User { id: string } type Safe = Record<string, unknown & User>;",
     "type Value = string; type Concrete = Value; type Index<Value> = Record<string, Concrete>; type Safe = Index<unknown>;",
+    "interface Value {} type Index<Value> = Record<string, Value>;",
   ],
   [
     "type WithSchema<T = Record<string, unknown>> = T;",

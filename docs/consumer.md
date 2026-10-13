@@ -87,8 +87,10 @@ in local, justified waivers.
 Custom project and Effect rules use syntax and lexical scope, not full type
 inference. Same-file aliases resolve where supported; imported types and
 cross-file call signatures do not. Unknown array receivers and lazy iterator
-pipelines are outside the array rule. Native type-aware rules use TypeScript
-project information and inferred projects for standalone files.
+pipelines are outside the array rule. The local host-runtime, Schema-compilation,
+and Effect-test-runtime rules recognize dot names and string-literal keys, not
+variable computed keys. Native type-aware rules use TypeScript project information
+and inferred projects for standalone files.
 
 ## Opt in to Effect conventions
 
