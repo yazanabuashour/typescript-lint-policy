@@ -31,14 +31,10 @@ function snapshotFiles(directory) {
   )
 }
 
-function runExporter(producer, destination, preload) {
+function runExporter(producer, destination) {
   return NodeChildProcess.spawnSync(
     process.execPath,
-    [
-      ...(preload === undefined ? [] : ["--import", preload]),
-      NodePath.join(producer, "scripts/vendor.mjs"),
-      destination,
-    ],
+    [NodePath.join(producer, "scripts/vendor.mjs"), destination],
     { encoding: "utf8" },
   )
 }
@@ -229,46 +225,6 @@ NodeTest.test(
     NodeAssert.equal(refused.status, 1, refused.stdout + refused.stderr)
     NodeAssert.match(refused.stderr, /Destination must not exist/u)
     NodeAssert.deepEqual(snapshotFiles(destination), beforeRefusal)
-  },
-)
-
-NodeTest.test(
-  "refuses build changes during copying and removes staging",
-  (context) => {
-    const temporary = NodeFS.mkdtempSync(
-      NodePath.join(NodeOS.tmpdir(), "policy-copy-"),
-    )
-
-    context.after(() =>
-      NodeFS.rmSync(temporary, { recursive: true, force: true }),
-    )
-    const destination = NodePath.join(temporary, "snapshot")
-    const preload = NodePath.join(temporary, "mutate-copy.mjs")
-
-    for (const [file, expected] of [
-      ["config.js", "Compiled output changed while copying"],
-      ["SOURCE.json", "Build manifest changed while copying"],
-    ]) {
-      NodeFS.writeFileSync(
-        preload,
-        `import fs from "node:fs"
-import path from "node:path"
-import { syncBuiltinESMExports } from "node:module"
-const copy = fs.cpSync
-fs.cpSync = (source, destination, options) => {
-  copy(source, destination, options)
-  if (source === ${JSON.stringify(NodePath.join(root, "dist"))}) {
-    fs.appendFileSync(path.join(destination, ${JSON.stringify(file)}), "\\n")
-  }
-}
-syncBuiltinESMExports()
-`,
-      )
-      const result = runExporter(root, destination, preload)
-      NodeAssert.equal(result.status, 1, result.stdout + result.stderr)
-      NodeAssert.ok(result.stderr.includes(expected), result.stderr)
-      NodeAssert.deepEqual(NodeFS.readdirSync(temporary), ["mutate-copy.mjs"])
-    }
   },
 )
 

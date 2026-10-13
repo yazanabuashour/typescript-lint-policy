@@ -35,9 +35,11 @@ The build records every source input and compiled output digest in
 previous `dist/` if publication fails. If restoration also fails, the error reports
 the retained previous build's path for manual recovery.
 Export refuses changed inputs or outputs until you rebuild.
-It also checks the copied build manifest and all copied outputs before publishing
-the destination. If those checks fail, it removes staging and leaves no snapshot.
-Export from a quiescent checkout: Git provenance observes cleanliness but does
+It also checks the copied build manifest, all copied outputs, and the remaining
+payload, including notices, before publishing the destination. It rechecks source
+inputs and payload bytes after copying. Failed checks remove staging and leave no
+snapshot. If Git becomes dirty or `HEAD` changes, the export claims no commit.
+Export from a quiescent checkout: these checks observe bytes and Git state but do
 not lock the working tree.
 
 The exported root `SOURCE.json` records the source digest, file digests, and a

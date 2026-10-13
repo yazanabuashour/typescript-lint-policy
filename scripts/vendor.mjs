@@ -96,13 +96,33 @@ const manifest = {
   ],
 }
 
+const copiedFiles = manifest.files.filter(
+  (file) => !["README.md", "SOURCE.json"].includes(file),
+)
+
+const payloadFiles = copiedFiles.filter((file) => file !== "dist")
+
+const consumerReadme = NodeFS.readFileSync(
+  NodePath.join(root, "docs/consumer.md"),
+)
+
+const manifestBytes = `${JSON.stringify(manifest, null, 2)}\n`
+
+const sourcePayload = fileHashes(root, payloadFiles)
+
+const payload = {
+  ...sourcePayload,
+  "README.md": sha256(consumerReadme),
+  "package.json": sha256(manifestBytes),
+}
+
 const status = NodeChildProcess.execFileSync(
   "git",
   ["status", "--porcelain", "--untracked-files=all"],
   { cwd: root, encoding: "utf8" },
 )
 
-const commit =
+let commit =
   status === ""
     ? NodeChildProcess.execFileSync("git", ["rev-parse", "HEAD"], {
         cwd: root,
@@ -113,22 +133,14 @@ const commit =
 const staging = NodeFS.mkdtempSync(`${destination}.tmp-`)
 
 try {
-  for (const file of manifest.files.filter(
-    (file) => !["README.md", "SOURCE.json"].includes(file),
-  )) {
+  for (const file of copiedFiles) {
     NodeFS.cpSync(NodePath.join(root, file), NodePath.join(staging, file), {
       recursive: true,
     })
   }
 
-  NodeFS.copyFileSync(
-    NodePath.join(root, "docs/consumer.md"),
-    NodePath.join(staging, "README.md"),
-  )
-  NodeFS.writeFileSync(
-    NodePath.join(staging, "package.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-  )
+  NodeFS.writeFileSync(NodePath.join(staging, "README.md"), consumerReadme)
+  NodeFS.writeFileSync(NodePath.join(staging, "package.json"), manifestBytes)
   const files = fileHashes(staging, NodeFS.readdirSync(staging))
   NodeAssert.equal(
     files["dist/SOURCE.json"],
@@ -146,6 +158,48 @@ try {
     build.outputs,
     "Compiled output changed while copying; run npm run build",
   )
+  NodeAssert.deepEqual(
+    Object.fromEntries(
+      Object.entries(files).filter(([file]) => !file.startsWith("dist/")),
+    ),
+    payload,
+    "Export payload changed while copying",
+  )
+  NodeAssert.deepEqual(
+    fileHashes(root, payloadFiles),
+    sourcePayload,
+    "Export source payload changed while copying",
+  )
+  NodeAssert.equal(
+    sha256(NodeFS.readFileSync(NodePath.join(root, "docs/consumer.md"))),
+    payload["README.md"],
+    "Consumer documentation changed while copying",
+  )
+  NodeAssert.deepEqual(
+    sourceHashes(),
+    build.inputs,
+    "Build inputs changed while copying; run npm run build",
+  )
+
+  if (commit !== null) {
+    const finalStatus = NodeChildProcess.execFileSync(
+      "git",
+      ["status", "--porcelain", "--untracked-files=all"],
+      { cwd: root, encoding: "utf8" },
+    )
+
+    const finalCommit = NodeChildProcess.execFileSync(
+      "git",
+      ["rev-parse", "HEAD"],
+      {
+        cwd: root,
+        encoding: "utf8",
+      },
+    ).trim()
+
+    if (finalStatus !== "" || finalCommit !== commit) commit = null
+  }
+
   NodeFS.writeFileSync(
     NodePath.join(staging, "SOURCE.json"),
     `${JSON.stringify(
