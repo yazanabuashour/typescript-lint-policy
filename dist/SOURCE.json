@@ -1,5 +1,5 @@
 {
-  "sourceSha256": "36913bcbc75f0d09ceb2c7deaec8d8d1ae239b2141342cd25d937592e51f1421",
+  "sourceSha256": "13c9dfed3e22d98c030ecdfbf2ddf6da92438516a50e5ab93adf539d3be086a6",
   "inputs": {
     "UPSTREAM-SOURCE.json": "5ba9406c66eb8fcc0579b6740bdebb7e583b50ddb5bce1d5261c76e9d0a11296",
     "package-lock.json": "8a8bf94bbce8da6ad578281af27f492baa45253a849c1666f2671668b5e579a3",
@@ -8,7 +8,7 @@
     "scripts/integrity.mjs": "4d4fa827016ae596b924ea6eef57ec6a0b5867d8d46751c80d6e8977e5428079",
     "scripts/update-upstream.mjs": "e51007bfd4f72773f6c37b04f7472abe354c1f05447ae3e54f611d9e7682a330",
     "scripts/upstream.mjs": "04af434d1bf132431a0ed2160937cb794625ffce7a32f6c10a5fb71cf0b96a3b",
-    "scripts/vendor.mjs": "699e64802fce13e27c6a12421cecba37f1fa2e1d45dac9803bc72011e34d4946",
+    "scripts/vendor.mjs": "d607eded22500617f8806c4f023d2b3b5758d806f384af21917f5f45e635f788",
     "src/config.ts": "3cc6246dddbf2940e8c2738146a72407a9f1f4174153cc295d76b2afd96ba923",
     "src/plugin/effect/index.ts": "3d147dc9c80a22c93dae5301dea6b5c9a573b00483658149ec4d031ae8cea77a",
     "src/plugin/effect/no-manual-effect-error-tag.ts": "1da2eec03d802c73fd5694a77231a3e5f9f381ae51328f4584cb5f4e972bcbd7",

@@ -36,9 +36,19 @@ previous `dist/` if publication fails. If restoration also fails, the error repo
 the retained previous build's path for manual recovery.
 Export refuses changed inputs or outputs until you rebuild.
 It also checks the copied build manifest, all copied outputs, and the remaining
-payload, including notices, before publishing the destination. It rechecks source
-inputs and payload bytes after copying. Failed checks remove staging and leave no
-snapshot. If Git becomes dirty or `HEAD` changes, the export claims no commit.
+payload, including notices, before exclusively reserving the destination. It
+rechecks source inputs and payload bytes after copying. Failed checks remove staging
+and leave no snapshot. If Git becomes dirty or `HEAD` changes, the export claims no
+commit.
+
+The destination is incomplete while validated children move into it; root
+`SOURCE.json` moves last. Wait for successful command completion before inspecting
+or using the snapshot. Competing exporters refuse the reserved destination rather
+than replacing it. Publication failure removes only this invocation's incomplete
+destination and staging. Cleanup failures preserve causes and report paths to
+inspect; a completed snapshot survives staging cleanup failure. Abrupt termination
+can leave incomplete output or staging, which you must inspect before removing or
+retrying.
 Export from a quiescent checkout: these checks observe bytes and Git state but do
 not lock the working tree.
 

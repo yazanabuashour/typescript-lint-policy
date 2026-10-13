@@ -32,11 +32,12 @@ if (contains(root, destination) || contains(destination, root)) {
   throw new Error("Export outside the producer tree")
 }
 
+const destinationRefusal =
+  "Destination must not exist; export to a new sibling directory and inspect before replacing"
+
 // Refuse replacement: the caller owns any existing consumer snapshot.
-if (NodeFS.existsSync(destination))
-  throw new Error(
-    "Destination must not exist; export to a new sibling directory and inspect before replacing",
-  )
+if (NodeFS.lstatSync(destination, { throwIfNoEntry: false }) !== undefined)
+  throw new Error(destinationRefusal)
 
 const buildManifest = NodeFS.readFileSync(
   NodePath.join(root, "dist/SOURCE.json"),
@@ -132,6 +133,12 @@ let commit =
 
 const staging = NodeFS.mkdtempSync(`${destination}.tmp-`)
 
+const failures = []
+
+let destinationOwned = false
+
+let published = false
+
 try {
   for (const file of copiedFiles) {
     NodeFS.cpSync(NodePath.join(root, file), NodePath.join(staging, file), {
@@ -214,10 +221,63 @@ try {
       2,
     )}\n`,
   )
-  NodeFS.renameSync(staging, destination)
-} finally {
-  NodeFS.rmSync(staging, { recursive: true, force: true })
+
+  try {
+    NodeFS.mkdirSync(destination, {
+      mode: NodeFS.statSync(staging).mode & 0o777,
+    })
+  } catch (error) {
+    if (error.code === "EEXIST")
+      throw new Error(destinationRefusal, { cause: error })
+
+    throw error
+  }
+
+  destinationOwned = true
+
+  for (const file of NodeFS.readdirSync(staging)) {
+    if (file !== "SOURCE.json")
+      NodeFS.renameSync(
+        NodePath.join(staging, file),
+        NodePath.join(destination, file),
+      )
+  }
+
+  NodeFS.renameSync(
+    NodePath.join(staging, "SOURCE.json"),
+    NodePath.join(destination, "SOURCE.json"),
+  )
+  published = true
+} catch (error) {
+  failures.push(error)
 }
+
+const cleanupErrors = []
+
+const directories = [staging]
+
+if (destinationOwned && !published) directories.push(destination)
+
+for (const directory of directories) {
+  try {
+    NodeFS.rmSync(directory, { recursive: true, force: true })
+  } catch (error) {
+    cleanupErrors.push(
+      new Error(`Export cleanup failed at ${directory}`, { cause: error }),
+    )
+  }
+}
+
+if (cleanupErrors.length > 0)
+  throw new AggregateError(
+    [...failures, ...cleanupErrors],
+    published
+      ? `Export cleanup failed; complete snapshot retained at ${destination}`
+      : "Export failed; inspect paths reported by cleanup errors",
+    { cause: failures.length > 0 ? failures[0] : cleanupErrors[0] },
+  )
+
+if (failures.length > 0) throw failures[0]
 
 console.log(
   `Exported ${build.sourceSha256} to ${destination}${commit === null ? " (uncommitted source; no commit claimed)" : ` (${commit})`}`,
