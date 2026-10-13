@@ -33,7 +33,7 @@
 
 4. Compare upstream changes with the retained ports described in
    [UPSTREAM.md](../UPSTREAM.md). Preserve stronger alias analysis, safety-comment
-   validation, consumer rule IDs, options, diagnostics, and the measured limits.
+   validation, consumer rule IDs, options, diagnostics, and readability limits.
    Keep the Effect catch-handler rule's specific guidance ahead of generic Match
    advice. Test compiled-plugin integration and Oxfmt stability as well as the
    unchanged upstream RuleTester cases.

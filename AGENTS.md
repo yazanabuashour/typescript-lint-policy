@@ -10,7 +10,7 @@ exemptions to the portable default.
 ## Architecture
 
 - `src/config.ts` is the package entry point. It composes native rules, loads the
-  project plugin, and owns the measured line-count tripwires.
+  project plugin, and owns the line-count readability limits.
 - `src/plugin/index.ts` composes `upstream.ts`, deliberate local overrides in
   `src/plugin/overrides/`, and additions in `src/plugin/rules/`. Preserve the
   `project` and `project-effect` namespaces, diagnostics, and options.
@@ -30,7 +30,8 @@ exemptions to the portable default.
   TypeScript, or declaration dependencies, then review the generated output.
   The build removes stale outputs and records input and output integrity,
   including required declaration inputs and third-party notices.
-- `receipts/size-limits.json` records the evidence for numeric tripwires.
+- `receipts/size-limits.json` records the readability settings and historical
+  counts; it does not establish healthy operational bounds.
 
 Use Node.js 22.18 or newer and install with `npm ci`. Use Oxlint for linting and
 Oxfmt for formatting; keep exact vendored source and consumer snapshots excluded

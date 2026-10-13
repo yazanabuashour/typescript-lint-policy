@@ -37,7 +37,8 @@ Oxlint's structural spacing fixes use `npm run lint -- --fix` before formatting.
 Start with the file that owns the change:
 
 - **Native rules and public configs:** [`src/config.ts`](src/config.ts).
-  Line-count evidence lives in [`receipts/size-limits.json`](receipts/size-limits.json).
+  Readability settings and historical counts live in
+  [`receipts/size-limits.json`](receipts/size-limits.json).
 - **Generic custom rules:** [`src/plugin/index.ts`](src/plugin/index.ts) composes
   exact imports in [`upstream.ts`](src/plugin/upstream.ts), retained ports in
   [`overrides/`](src/plugin/overrides/), and additions in [`rules/`](src/plugin/rules/).
