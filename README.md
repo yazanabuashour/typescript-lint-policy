@@ -2,8 +2,8 @@
 
 `@yazanabuashour/oxlint-config` is a strict, portable Oxlint policy distributed
 as public GitHub source under MIT. `private: true` prevents npm publication;
-it does not make the source private. Consumers use compiled snapshots from the
-producer-owned exporter, not a registry package.
+it does not make the source private. Consumers use compiled snapshots exported
+from reviewed producer commits, not a registry package.
 
 The default combines type-aware native correctness, suspicious, performance,
 React Hooks, TypeScript safety, and accessibility rules with pinned anti-slop
@@ -15,7 +15,7 @@ Consumer-specific exemptions stay in consumer configs.
 - [Install, configure, and update a snapshot](docs/consumer.md): public exports,
   rule behavior, options, limitations, and local waivers. This guide becomes the
   exported snapshot's README.
-- [Export a consumer snapshot](docs/export.md): producer gates, release exports,
+- [Export a consumer snapshot](docs/export.md): producer gates, committed exports,
   and content-addressed provenance.
 
 ## Change the policy

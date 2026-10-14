@@ -7,8 +7,9 @@
    npm run check
    ```
 
-2. Review and commit the producer changes before a release export. Development
-   exports work before commit, but their `SOURCE.json` has `commit: null`.
+2. Review and commit the producer changes before exporting for consumers. Export
+   from a clean tree at that full commit. Development exports work before commit,
+   but their `SOURCE.json` has `commit: null`; do not use them for consumer updates.
 
 3. Choose a new destination outside this repository. Its parent directory must
    exist. The exporter refuses existing destinations, including current consumer
@@ -18,8 +19,8 @@
    npm run vendor -- ../consumer/tools/typescript-lint-policy.next
    ```
 
-4. Inspect the snapshot and its `SOURCE.json`. Compare it with the consumer's
-   current snapshot before replacing that directory.
+4. Verify the snapshot's `SOURCE.json.commit` matches the selected full commit.
+   Compare it with the consumer's current snapshot before replacing that directory.
 
 5. Follow [Install and configure](consumer.md#install-and-configure) for the
    local file dependency and exact peers, then run the consumer's gates. Follow
