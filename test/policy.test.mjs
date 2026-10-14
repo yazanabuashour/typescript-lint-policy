@@ -97,6 +97,13 @@ NodeTest.test(
       )
     }
 
+    NodeAssert.strict.deepEqual(strictestConfig.overrides, [
+      {
+        files: ["**/*.{spec,test}.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"],
+        rules: { "typescript/unbound-method": "off" },
+      },
+    ])
+
     NodeAssert.strict.ok(strictestConfig.plugins?.includes("jsx-a11y"))
 
     for (const name of [
