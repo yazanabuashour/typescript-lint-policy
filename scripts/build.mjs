@@ -35,7 +35,7 @@ try {
   }
 
   NodeAssert.deepEqual(sourceHashes(), inputs, "Source changed during build")
-  const outputs = fileHashes(output, NodeFS.readdirSync(output))
+  const outputs = fileHashes(output)
   NodeFS.writeFileSync(
     NodePath.join(output, "SOURCE.json"),
     `${JSON.stringify(

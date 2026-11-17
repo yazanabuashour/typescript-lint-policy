@@ -69,7 +69,6 @@ function assertSnapshot(destination) {
 }
 
 for (const scenario of [
-  "success",
   "competitor-empty",
   "competitor-nonempty",
   "dangling-link",
@@ -111,14 +110,8 @@ ${hooks}`,
       { encoding: "utf8" },
     )
 
-    NodeAssert.equal(
-      result.status,
-      scenario === "success" ? 0 : 1,
-      result.stdout + result.stderr,
-    )
-
-    if (scenario !== "success")
-      NodeAssert.equal(result.stdout.includes("Exported "), false)
+    NodeAssert.equal(result.status, 1, result.stdout + result.stderr)
+    NodeAssert.equal(result.stdout.includes("Exported "), false)
 
     if (scenario === "dangling-link") {
       NodeAssert.match(result.stderr, /Destination must not exist/u)
@@ -154,7 +147,7 @@ ${hooks}`,
           "competitor",
         )
       NodeAssert.equal(observed.cleanup.includes(destination), false)
-    } else if (scenario === "success" || scenario === "complete-cleanup") {
+    } else if (scenario === "complete-cleanup") {
       NodeAssert.equal(observed.provenanceLast, true)
       NodeAssert.equal(NodeFS.statSync(destination).mode & 0o777, observed.mode)
       NodeAssert.equal(observed.cleanup.includes(destination), false)

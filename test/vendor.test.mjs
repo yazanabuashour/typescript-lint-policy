@@ -136,6 +136,7 @@ NodeTest.test(
     const destination = NodePath.join(temporary, "policy")
     const result = runExporter(root, destination)
     NodeAssert.equal(result.status, 0, result.stdout + result.stderr)
+    NodeAssert.deepEqual(NodeFS.readdirSync(temporary), ["policy"])
 
     const manifest = JSON.parse(
       NodeFS.readFileSync(NodePath.join(destination, "package.json"), "utf8"),

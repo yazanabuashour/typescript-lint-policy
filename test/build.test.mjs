@@ -50,7 +50,7 @@ NodeTest.test(
       NodePath.join(destination, "stale.js"),
       "previous output",
     )
-    const before = fileHashes(destination, NodeFS.readdirSync(destination))
+    const before = fileHashes(destination)
     const preload = NodePath.join(temporary, "fail-publication.mjs")
 
     for (const failRollback of [false, true]) {
@@ -91,10 +91,7 @@ syncBuiltinESMExports()
         const previous = NodePath.join(producer, staging[0], "previous")
         NodeAssert.ok(result.stderr.includes(previous), result.stderr)
         NodeAssert.equal(NodeFS.existsSync(destination), false)
-        NodeAssert.deepEqual(
-          fileHashes(previous, NodeFS.readdirSync(previous)),
-          before,
-        )
+        NodeAssert.deepEqual(fileHashes(previous), before)
         NodeFS.renameSync(previous, destination)
         NodeFS.rmSync(NodePath.join(producer, staging[0]), {
           recursive: true,
@@ -102,10 +99,7 @@ syncBuiltinESMExports()
         })
       } else {
         NodeAssert.deepEqual(staging, [])
-        NodeAssert.deepEqual(
-          fileHashes(destination, NodeFS.readdirSync(destination)),
-          before,
-        )
+        NodeAssert.deepEqual(fileHashes(destination), before)
       }
     }
 

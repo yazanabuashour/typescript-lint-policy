@@ -9,33 +9,32 @@ export function sha256(value) {
   return NodeCrypto.createHash("sha256").update(value).digest("hex")
 }
 
-export function fileHashes(directory, entries) {
-  const files = entries.flatMap((entry) => {
+export function fileHashes(directory, entries = NodeFS.readdirSync(directory)) {
+  const hashes = []
+
+  function visit(entry) {
     const path = NodePath.join(directory, entry)
     const stat = NodeFS.lstatSync(path)
 
     if (stat.isSymbolicLink()) throw new Error(`Symlink not allowed: ${entry}`)
 
-    return stat.isDirectory()
-      ? Object.entries(fileHashes(path, NodeFS.readdirSync(path))).map(
-          ([file, digest]) => [`${entry}/${file}`, digest],
-        )
-      : [[entry, sha256(NodeFS.readFileSync(path))]]
-  })
+    if (stat.isDirectory()) {
+      for (const child of NodeFS.readdirSync(path)) visit(`${entry}/${child}`)
+    } else {
+      hashes.push([entry, sha256(NodeFS.readFileSync(path))])
+    }
+  }
 
-  const hashes = new Map(files)
+  for (const entry of entries) visit(entry)
 
   return Object.fromEntries(
-    [...hashes.keys()]
-      // Keep provenance ordering independent of the host locale.
-      .sort((left, right) => {
-        if (left < right) return -1
+    hashes.sort(([left], [right]) => {
+      if (left < right) return -1
 
-        if (left > right) return 1
+      if (left > right) return 1
 
-        return 0
-      })
-      .map((file) => [file, hashes.get(file)]),
+      return 0
+    }),
   )
 }
 

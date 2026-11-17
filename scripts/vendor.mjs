@@ -148,7 +148,7 @@ try {
 
   NodeFS.writeFileSync(NodePath.join(staging, "README.md"), consumerReadme)
   NodeFS.writeFileSync(NodePath.join(staging, "package.json"), manifestBytes)
-  const files = fileHashes(staging, NodeFS.readdirSync(staging))
+  const files = fileHashes(staging)
   NodeAssert.equal(
     files["dist/SOURCE.json"],
     sha256(buildManifest),
