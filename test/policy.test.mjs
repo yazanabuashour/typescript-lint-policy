@@ -100,7 +100,22 @@ NodeTest.test(
     NodeAssert.strict.deepEqual(strictestConfig.overrides, [
       {
         files: ["**/*.{spec,test}.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"],
-        rules: { "typescript/unbound-method": "off" },
+        rules: {
+          "typescript/no-unsafe-argument": "off",
+          "typescript/no-unsafe-assignment": "off",
+          "typescript/no-unsafe-member-access": "off",
+          "typescript/unbound-method": "off",
+        },
+      },
+      {
+        files: ["**/*.{js,jsx,mjs,cjs}"],
+        rules: {
+          "typescript/no-unsafe-argument": "off",
+          "typescript/no-unsafe-assignment": "off",
+          "typescript/no-unsafe-call": "off",
+          "typescript/no-unsafe-member-access": "off",
+          "typescript/no-unsafe-return": "off",
+        },
       },
     ])
 
